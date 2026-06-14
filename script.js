@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ═══════════════════════════════════════════════════════════════
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwLUWJs-PhULiqDi6zbNctVZGqzitqXEViBBEDRQbQVUvdta0HWxTRj2Q4_nCUtxSzY9g/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwbYNUf0--D2RVqFyaBZHFxQuClX6RBybuhK6kJU9Q02NZyICUIXEnUWIR1x25xMnfMrA/exec';
 
 // Activa MODO_OFFLINE = true para probar la app sin un backend real
 // (usa localStorage como base de datos simulada).
