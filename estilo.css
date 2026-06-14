@@ -677,26 +677,55 @@ input:checked + .toggle-slider::before { transform:translateX(22px); }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
 .loading { animation:pulse 1.5s ease-in-out infinite; }
 
-/* FASE 7: Busqueda y Escaner */
-.filter-panel { padding: 15px; border: 1px solid var(--gray-200); border-radius: var(--radius-lg); background: white; box-shadow: var(--shadow-sm); }
+/* ═══════════════════════════════════════════════════════════════
+   FASE 7: BÚSQUEDA AVANZADA, ESCÁNER Y BADGES DE STOCK (POS)
+════════════════════════════════════════════════════════════════ */
+.filter-panel {
+  padding: 15px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+}
 .filter-panel input, .filter-panel select { height: 38px; font-size: 0.85rem; }
-.search-with-scan { display: flex; gap: 8px; width: 100%; }
-.search-with-scan input { flex: 1; }
-.btn-scan { min-width: 50px; padding: 0; display: flex; align-items: center; justify-content: center; background-color: var(--gray-100); border: 1px solid var(--gray-300); border-radius: var(--radius); }
-.btn-scan:hover { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
-#reader { border: 1px solid var(--gray-300); border-radius: var(--radius); overflow: hidden; }
 
-/* TICKET PRINT */
-.print-only { display: none; }
+.search-with-scan { display:flex; gap:8px; width:100%; }
+.search-with-scan input { flex:1; }
+.btn-scan {
+  min-width:50px; padding:0; display:flex; align-items:center; justify-content:center;
+  background-color: var(--gray-100); border:1px solid var(--border-color); border-radius: var(--radius);
+}
+.btn-scan:hover { background-color: var(--primary-color); color:white; border-color: var(--primary-color); }
+
+#reader { border:1px solid var(--border-color); border-radius: var(--radius); overflow:hidden; }
+
+.badge-stock { padding:4px 8px; border-radius:4px; font-weight:bold; }
+.badge-stock.danger  { background: var(--danger-light);  color: var(--danger-color); }
+.badge-stock.warning { background: var(--warning-light); color:#856404; }
+.badge-stock.success { background: var(--success-light); color: var(--success-color); }
+
+.row-alert { background-color:#fff5f5 !important; }
+body.dark-mode .row-alert { background-color:#3c1a1a !important; }
+
+/* ═══════════════════════════════════════════════════════════════
+   TICKET DE IMPRESIÓN
+════════════════════════════════════════════════════════════════ */
+.print-only { display:none; }
+
 @media print {
-    body * { visibility: hidden; } .no-print { display: none !important; }
-    #ticketPrintZone, #ticketPrintZone * { visibility: visible; }
-    #ticketPrintZone { position: absolute; left: 0; top: 0; width: 300px; font-family: 'Courier New', Courier, monospace; font-size: 12px; color: black; margin: 0; padding: 10px; display: block; }
-    .ticket-header { text-align: center; margin-bottom: 15px; border-bottom: 1px dashed black; padding-bottom: 10px; }
-    .ticket-header h2 { font-size: 16px; margin: 0; color: black; border: none; justify-content: center; padding: 0;}
-    .ticket-body { margin-bottom: 15px; border-bottom: 1px dashed black; padding-bottom: 10px;}
-    .ticket-table { width: 100%; text-align: left; margin-top: 10px; border-collapse: collapse; }
-    .ticket-table th, .ticket-table td { padding: 4px 0; border: none; color: black; font-size: 12px;}
-    .ticket-total { font-weight: bold; font-size: 14px; text-align: right; margin-top: 10px; }
-    .ticket-footer { text-align: center; font-size: 11px; }
+  body * { visibility:hidden; }
+  .no-print { display:none !important; }
+  #ticketPrintZone, #ticketPrintZone * { visibility:visible; }
+  #ticketPrintZone {
+    position:absolute; left:0; top:0; width:300px;
+    font-family:'Courier New', Courier, monospace; font-size:12px; color:black;
+    margin:0; padding:10px; display:block;
+  }
+  .ticket-header { text-align:center; margin-bottom:15px; border-bottom:1px dashed black; padding-bottom:10px; }
+  .ticket-header h2 { font-size:16px; margin:0; color:black; border:none; justify-content:center; padding:0; }
+  .ticket-body { margin-bottom:15px; border-bottom:1px dashed black; padding-bottom:10px; }
+  .ticket-table { width:100%; text-align:left; margin-top:10px; border-collapse:collapse; }
+  .ticket-table th, .ticket-table td { padding:4px 0; border:none; color:black; font-size:12px; }
+  .ticket-total { font-weight:bold; font-size:14px; text-align:right; margin-top:10px; }
+  .ticket-footer { text-align:center; font-size:11px; }
 }

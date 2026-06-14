@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistema de Inventario</title>
+  <title>Inventario ERP POS</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -13,23 +13,38 @@
 <body>
 
 <!-- ═══════════════════════════════════════════════════════════
-     ZONAS DE IMPRESIÓN Y ESCÁNER
+     TOAST NOTIFICATIONS
+════════════════════════════════════════════════════════════ -->
+<div id="toastContainer" class="toast-container"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     TICKET DE IMPRESIÓN (oculto, solo para impresión)
 ════════════════════════════════════════════════════════════ -->
 <div id="ticketPrintZone" class="print-only">
-  <div class="ticket-header"><h2>MI NEGOCIO</h2><p>Ticket de Venta</p><p id="t_fecha"></p><p>Ticket #: <span id="t_id"></span></p></div>
-  <div class="ticket-body"><p><strong>Cliente:</strong> <span id="t_cliente"></span></p>
-    <table class="ticket-table"><thead><tr><th>Cant.</th><th>Producto</th><th>Total</th></tr></thead><tbody id="t_items"></tbody></table>
+  <div class="ticket-header">
+    <h2>MI NEGOCIO</h2><p>Ticket de Venta</p>
+    <p id="t_fecha"></p><p>Ticket #: <span id="t_id"></span></p>
+  </div>
+  <div class="ticket-body">
+    <p><strong>Cliente:</strong> <span id="t_cliente"></span></p>
+    <table class="ticket-table">
+      <thead><tr><th>Cant.</th><th>Producto</th><th>Total</th></tr></thead>
+      <tbody id="t_items"></tbody>
+    </table>
     <div class="ticket-total">TOTAL: $<span id="t_total"></span></div>
   </div>
   <div class="ticket-footer">¡Gracias por su compra!</div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════════
+     MODAL ESCÁNER (QR / CÓDIGO DE BARRAS)
+════════════════════════════════════════════════════════════ -->
 <div id="scannerModal" class="modal hidden">
-  <div class="modal-content" style="max-width: 400px; text-align: center;">
-    <span class="close-modal" onclick="closeScanner()">&times;</span>
+  <div class="modal-content" style="max-width:400px; text-align:center;">
+    <span class="close-modal" id="closeScanner">&times;</span>
     <h3 class="mb-4"><i class="fas fa-camera"></i> Escanear Código</h3>
-    <div id="reader" style="width: 100%;"></div>
-    <p class="mt-3 text-center" style="font-size: 0.8rem; color: var(--gray-500);">Apunta la cámara al código de barras o QR.</p>
+    <div id="reader" style="width:100%;"></div>
+    <p class="mt-3 text-center" style="font-size:0.8rem; color:var(--text-muted);">Apunta la cámara al código de barras o QR.</p>
   </div>
 </div>
 
@@ -39,8 +54,8 @@
 <div id="loginScreen" class="login-screen no-print">
   <div class="login-card">
     <div class="login-logo">
-      <i class="fas fa-warehouse"></i>
-      <h1>Inventario Pro</h1>
+      <i class="fas fa-store"></i>
+      <h1>Inventario ERP POS</h1>
       <p>Sistema de Gestión</p>
     </div>
     <div class="form-group">
@@ -48,14 +63,14 @@
       <input type="text" id="login_usuario" placeholder="Ingresa tu usuario" autocomplete="username">
     </div>
     <div class="form-group" style="position:relative;">
-      <label for="login_password"><i class="fas fa-lock"></i> Contraseña</label>
-      <input type="password" id="login_password" placeholder="Ingresa tu contraseña" autocomplete="current-password">
+      <label for="login_password"><i class="fas fa-lock"></i> Contraseña / PIN</label>
+      <input type="password" id="login_password" placeholder="Ingresa tu contraseña o PIN" autocomplete="current-password">
       <button type="button" class="toggle-pass" onclick="togglePassword()">
         <i class="fas fa-eye" id="togglePassIcon"></i>
       </button>
     </div>
     <div id="loginError" class="status-message error hidden"></div>
-    <button id="loginBtn" class="btn primary-btn" style="width:100%;max-width:100%;" onclick="handleLogin()">
+    <button id="loginBtn" class="btn primary-btn full-width" style="max-width:100%;" onclick="handleLogin()">
       <i class="fas fa-sign-in-alt"></i> Ingresar
     </button>
     <p class="login-hint">Usuario por defecto: <b>admin</b> / <b>admin123</b></p>
@@ -63,19 +78,14 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
-     TOAST NOTIFICATIONS
-════════════════════════════════════════════════════════════ -->
-<div id="toastContainer" class="toast-container"></div>
-
-<!-- ═══════════════════════════════════════════════════════════
      DASHBOARD PRINCIPAL
 ════════════════════════════════════════════════════════════ -->
-<div class="dashboard-container hidden" id="mainApp">
+<div class="dashboard-container hidden no-print" id="mainApp">
 
   <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
     <div class="logo">
-      <i class="fas fa-warehouse"></i> Inventario
+      <i class="fas fa-store"></i> Mi Negocio
     </div>
 
     <!-- Info de usuario logueado -->
@@ -89,7 +99,10 @@
 
     <nav class="sidebar-nav" id="sidebarNav">
       <a href="#" data-section="dashboard" class="active">
-        <i class="fas fa-chart-line"></i> Dashboard
+        <i class="fas fa-chart-pie"></i> Dashboard
+      </a>
+      <a href="#" data-section="ventas">
+        <i class="fas fa-cash-register"></i> Punto de Venta
       </a>
       <a href="#" data-section="inventario">
         <i class="fas fa-cubes"></i> Inventario
@@ -102,9 +115,6 @@
       </a>
       <a href="#" data-section="compras" data-rol="empleado">
         <i class="fas fa-truck-loading"></i> Compras
-      </a>
-      <a href="#" data-section="ventas" data-rol="empleado">
-        <i class="fas fa-cash-register"></i> Ventas
       </a>
       <a href="#" data-section="clientes" data-rol="empleado">
         <i class="fas fa-users"></i> Clientes
@@ -144,7 +154,7 @@
 
     <!-- ── DASHBOARD ── -->
     <section id="dashboard" class="content-section active">
-      <h2><i class="fas fa-chart-line"></i> Dashboard</h2>
+      <h2><i class="fas fa-chart-pie"></i> Dashboard</h2>
 
       <div class="button-group">
         <button id="cargarDatosGraficosBtn" class="btn primary-btn">
@@ -161,22 +171,22 @@
         <div class="stat-card">
           <i class="fas fa-shopping-cart"></i>
           <div class="stat-value" id="totalVentas">$0.00</div>
-          <div class="stat-label">Total Ventas</div>
+          <div class="stat-label">Ingresos (Ventas)</div>
         </div>
         <div class="stat-card">
           <i class="fas fa-truck-loading" style="color:var(--info-color)"></i>
           <div class="stat-value" id="totalCompras">$0.00</div>
-          <div class="stat-label">Total Compras</div>
+          <div class="stat-label">Inversión (Compras)</div>
+        </div>
+        <div class="stat-card">
+          <i class="fas fa-money-bill-wave" style="color:var(--warning-color)"></i>
+          <div class="stat-value" id="totalGastos">$0.00</div>
+          <div class="stat-label">Total Gastos</div>
         </div>
         <div class="stat-card">
           <i class="fas fa-chart-line" style="color:var(--success-color)"></i>
           <div class="stat-value" id="totalGanancias">$0.00</div>
-          <div class="stat-label">Ganancias Netas</div>
-        </div>
-        <div class="stat-card">
-          <i class="fas fa-money-bill-wave" style="color:var(--danger-color)"></i>
-          <div class="stat-value" id="totalGastos">$0.00</div>
-          <div class="stat-label">Total Gastos</div>
+          <div class="stat-label">Ganancia Líquida</div>
         </div>
         <div class="stat-card">
           <i class="fas fa-calendar-day" style="color:var(--warning-color)"></i>
@@ -211,29 +221,62 @@
       </div>
     </section>
 
+    <!-- ── VENTAS (PUNTO DE VENTA) ── -->
+    <section id="ventas" class="content-section">
+      <h2><i class="fas fa-cash-register"></i> Punto de Venta</h2>
+      <form id="ventaForm" class="form-grid">
+        <div class="form-group">
+          <label>Escáner / Buscador:</label>
+          <div class="search-with-scan">
+            <input type="text" id="v_query" placeholder="ID, código, nombre o cámara..." required>
+            <button type="button" class="btn secondary-btn btn-scan" onclick="openScanner('v')"><i class="fas fa-camera"></i></button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Cantidad Vendida:</label>
+          <input type="number" id="v_cantidad" required min="1" value="1">
+        </div>
+        <div class="form-group">
+          <label>Precio Unitario Venta:</label>
+          <input type="number" id="v_precio_venta" required min="0.01" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Cliente (Opcional):</label>
+          <input type="text" id="v_cliente" list="listClientes">
+          <datalist id="listClientes"></datalist>
+        </div>
+        <div class="product-details hidden full-width" id="v_product_details"></div>
+        <input type="hidden" id="v_producto_id">
+        <div class="full-width">
+          <button type="submit" class="btn primary-btn" id="v_submit_btn" disabled>
+            <i class="fas fa-hand-holding-usd"></i> Vender e Imprimir Ticket
+          </button>
+        </div>
+      </form>
+      <div id="statusVenta" class="status-message hidden"></div>
+    </section>
+
     <!-- ── INVENTARIO ── -->
     <section id="inventario" class="content-section">
       <h2><i class="fas fa-cubes"></i> Inventario Actual</h2>
 
       <!-- Filtros de búsqueda avanzada -->
-      <div class="search-bar">
-        <div class="search-input-wrap">
-          <i class="fas fa-search"></i>
-          <input type="text" id="inv_buscar" placeholder="Buscar por nombre, código, categoría...">
+      <div class="filter-panel mb-4">
+        <h4 class="mb-2" style="color:var(--text-main)"><i class="fas fa-filter"></i> Búsqueda Avanzada</h4>
+        <div class="form-grid" style="grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; margin-bottom:0;">
+          <input type="text" id="f_texto" placeholder="🔎 Buscar por nombre o código..." oninput="filtrarInventario()">
+          <select id="f_categoria" onchange="filtrarInventario()"><option value="">Todas las Categorías</option></select>
+          <select id="f_stock" onchange="filtrarInventario()">
+            <option value="">Cualquier Nivel de Stock</option>
+            <option value="bajo">⚠️ Stock Bajo / Agotado</option>
+            <option value="agotado">❌ Solo Agotados</option>
+            <option value="ok">✅ Stock Normal</option>
+          </select>
+          <input type="number" id="f_min_precio" placeholder="Precio Min ($)" oninput="filtrarInventario()">
+          <input type="number" id="f_max_precio" placeholder="Precio Max ($)" oninput="filtrarInventario()">
+          <button id="cargarInventarioBtn" class="btn secondary-btn"><i class="fas fa-sync"></i> Recargar Servidor</button>
+          <button onclick="exportarCSV('inventario')" class="btn secondary-btn"><i class="fas fa-file-csv"></i> CSV</button>
         </div>
-        <select id="inv_cat_filter"><option value="">Todas las categorías</option></select>
-        <select id="inv_stock_filter">
-          <option value="">Todo el stock</option>
-          <option value="bajo">Stock bajo (≤5)</option>
-          <option value="agotado">Agotados</option>
-          <option value="ok">Stock ok (>5)</option>
-        </select>
-        <button id="cargarInventarioBtn" class="btn secondary-btn">
-          <i class="fas fa-sync"></i> Refrescar
-        </button>
-        <button onclick="exportarCSV('inventario')" class="btn secondary-btn">
-          <i class="fas fa-file-csv"></i> CSV
-        </button>
       </div>
 
       <div id="statusInventario" class="status-message hidden"></div>
@@ -241,13 +284,13 @@
       <div class="data-table-container">
         <table class="data-table">
           <thead>
-            <tr>
+            <tr id="trHeadInventario">
               <th>ID</th><th>Nombre</th><th>Código</th><th>Categoría</th>
               <th>Stock</th><th>P. Compra</th><th>P. Venta</th><th>Acciones</th>
             </tr>
           </thead>
           <tbody id="inventarioTableBody">
-            <tr><td colspan="8">Presiona "Refrescar" para cargar.</td></tr>
+            <tr><td colspan="8">Presiona "Recargar Servidor" para cargar.</td></tr>
           </tbody>
         </table>
       </div>
@@ -258,8 +301,11 @@
       <h2><i class="fas fa-box-open"></i> Registrar Nuevo Producto</h2>
       <form id="productoForm" class="form-grid">
         <div class="form-group">
-          <label>Código Único:</label>
-          <input type="text" id="p_codigo" required placeholder="Ej: PROD-001">
+          <label>Código Único / Código de Barras:</label>
+          <div class="search-with-scan">
+            <input type="text" id="p_codigo" required placeholder="Ej: PROD-001">
+            <button type="button" class="btn secondary-btn btn-scan" onclick="openScanner('p')"><i class="fas fa-camera"></i></button>
+          </div>
         </div>
         <div class="form-group">
           <label>Nombre:</label>
@@ -283,6 +329,10 @@
           <label>Stock Inicial:</label>
           <input type="number" id="p_stock" required min="0">
         </div>
+        <div class="form-group">
+          <label>Alerta Stock Mínimo:</label>
+          <input type="number" id="p_stock_minimo" required min="1" value="5">
+        </div>
         <div class="full-width">
           <button type="submit" class="btn primary-btn">
             <i class="fas fa-save"></i> Registrar Producto
@@ -300,33 +350,37 @@
           <button class="modal-close" onclick="cerrarModal('modalEditarProducto')"><i class="fas fa-times"></i></button>
         </div>
         <div class="modal-body">
-          <input type="hidden" id="ep_id">
-          <div class="form-grid">
+          <form id="editProductoForm" class="form-grid">
+            <input type="hidden" id="ep_id">
             <div class="form-group">
               <label>Código:</label>
-              <input type="text" id="ep_codigo">
+              <input type="text" id="ep_codigo" required>
             </div>
             <div class="form-group">
               <label>Nombre:</label>
-              <input type="text" id="ep_nombre">
+              <input type="text" id="ep_nombre" required>
             </div>
             <div class="form-group">
               <label>Categoría:</label>
-              <select id="ep_categoria"></select>
+              <select id="ep_categoria" required></select>
             </div>
             <div class="form-group">
               <label>Precio Compra:</label>
-              <input type="number" id="ep_precio_compra" step="0.01">
+              <input type="number" id="ep_precio_compra" step="0.01" required>
             </div>
             <div class="form-group">
               <label>Precio Venta:</label>
-              <input type="number" id="ep_precio_venta" step="0.01">
+              <input type="number" id="ep_precio_venta" step="0.01" required>
             </div>
             <div class="form-group">
               <label>Stock:</label>
-              <input type="number" id="ep_stock">
+              <input type="number" id="ep_stock" required>
             </div>
-          </div>
+            <div class="form-group">
+              <label>Alerta Stock Mínimo:</label>
+              <input type="number" id="ep_stock_minimo" required min="1">
+            </div>
+          </form>
         </div>
         <div class="modal-footer">
           <button class="btn secondary-btn" onclick="cerrarModal('modalEditarProducto')">Cancelar</button>
@@ -350,24 +404,24 @@
         </button>
       </form>
       <div id="statusCategoria" class="status-message hidden"></div>
-      <h3 style="margin:1.5rem 0 0.75rem">Categorías Existentes</h3>
+      <h3 class="mt-6 mb-2">Categorías Existentes</h3>
       <ul id="listaCategorias" class="lista-categorias"><li>Cargando...</li></ul>
     </section>
 
     <!-- ── COMPRAS ── -->
     <section id="compras" class="content-section">
-      <h2><i class="fas fa-truck-loading"></i> Registro de Compras</h2>
+      <h2><i class="fas fa-truck-loading"></i> Ingreso de Mercadería</h2>
       <form id="compraForm" class="form-grid">
         <div class="form-group">
-          <label>Buscar Producto:</label>
+          <label>Escáner / Buscador:</label>
           <div class="search-with-scan">
-            <input type="text" id="co_query" placeholder="ID, Código o Nombre..." required>
+            <input type="text" id="co_query" placeholder="ID, código o nombre..." required>
             <button type="button" class="btn secondary-btn btn-scan" onclick="openScanner('co')"><i class="fas fa-camera"></i></button>
           </div>
         </div>
         <div class="form-group">
           <label>Cantidad Comprada:</label>
-          <input type="number" id="co_cantidad" required min="1">
+          <input type="number" id="co_cantidad" required min="1" value="1">
         </div>
         <div class="form-group">
           <label>Precio Unitario Compra:</label>
@@ -387,41 +441,6 @@
         </div>
       </form>
       <div id="statusCompra" class="status-message hidden"></div>
-    </section>
-
-    <!-- ── VENTAS ── -->
-    <section id="ventas" class="content-section">
-      <h2><i class="fas fa-cash-register"></i> Registro de Ventas</h2>
-      <form id="ventaForm" class="form-grid">
-        <div class="form-group">
-          <label>Buscar Producto:</label>
-          <div class="search-with-scan">
-            <input type="text" id="v_query" placeholder="ID, Código o Nombre..." required>
-            <button type="button" class="btn secondary-btn btn-scan" onclick="openScanner('v')"><i class="fas fa-camera"></i></button>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Cantidad Vendida:</label>
-          <input type="number" id="v_cantidad" required min="1">
-        </div>
-        <div class="form-group">
-          <label>Precio Unitario Venta:</label>
-          <input type="number" id="v_precio_venta" required min="0.01" step="0.01">
-        </div>
-        <div class="form-group">
-          <label>Cliente (Opcional):</label>
-          <input type="text" id="v_cliente" list="listClientes">
-          <datalist id="listClientes"></datalist>
-        </div>
-        <div class="product-details hidden full-width" id="v_product_details"></div>
-        <input type="hidden" id="v_producto_id">
-        <div class="full-width">
-          <button type="submit" class="btn primary-btn" id="v_submit_btn" disabled>
-            <i class="fas fa-hand-holding-usd"></i> Registrar Venta
-          </button>
-        </div>
-      </form>
-      <div id="statusVenta" class="status-message hidden"></div>
     </section>
 
     <!-- ── CLIENTES ── -->
@@ -541,7 +560,7 @@
         </button>
       </form>
       <div id="statusGasto" class="status-message hidden"></div>
-      <div class="button-group" style="margin-top:1.5rem">
+      <div class="button-group mt-6">
         <button onclick="cargarGastos()" class="btn secondary-btn">
           <i class="fas fa-sync"></i> Ver Gastos
         </button>
@@ -560,17 +579,34 @@
     <!-- ── CORTE DE CAJA ── -->
     <section id="caja" class="content-section">
       <h2><i class="fas fa-lock"></i> Corte de Caja (Día Actual)</h2>
-      <div class="stats-grid mt-4">
-        <div class="stat-card" style="border-left: 4px solid var(--success-color);"><div class="stat-label">Ventas Hoy</div><div class="stat-value" id="caja_ventas">$0.00</div></div>
-        <div class="stat-card" style="border-left: 4px solid var(--danger-color);"><div class="stat-label">Gastos Hoy</div><div class="stat-value" id="caja_gastos">$0.00</div></div>
-        <div class="stat-card" style="border-left: 4px solid var(--primary-color);"><div class="stat-label">Efectivo Esperado</div><div class="stat-value" id="caja_neto">$0.00</div></div>
+      <div class="button-group">
+        <button onclick="loadCaja()" class="btn secondary-btn">
+          <i class="fas fa-sync"></i> Actualizar
+        </button>
       </div>
-      <button id="btn_cerrarCaja" class="btn primary-btn full-width mt-4" style="height: 50px; font-size: 1.1rem;"><i class="fas fa-cash-register"></i> Ejecutar Cierre de Caja</button>
-      <h3 class="mt-6">Historial de Cortes</h3>
+      <div class="stats-grid mt-4">
+        <div class="stat-card" style="border-left:4px solid var(--success-color);">
+          <div class="stat-label">Ventas Hoy</div>
+          <div class="stat-value" id="caja_ventas">$0.00</div>
+        </div>
+        <div class="stat-card" style="border-left:4px solid var(--danger-color);">
+          <div class="stat-label">Gastos Hoy</div>
+          <div class="stat-value" id="caja_gastos">$0.00</div>
+        </div>
+        <div class="stat-card" style="border-left:4px solid var(--primary-color);">
+          <div class="stat-label">Efectivo Esperado</div>
+          <div class="stat-value" id="caja_neto">$0.00</div>
+        </div>
+      </div>
+      <button id="btn_cerrarCaja" class="btn primary-btn full-width mt-4" style="height:50px; font-size:1.1rem;">
+        <i class="fas fa-cash-register"></i> Ejecutar Cierre de Caja
+      </button>
+      <div id="statusCaja" class="status-message hidden mt-4"></div>
+      <h3 class="mt-6 mb-2">Historial de Cortes</h3>
       <div class="data-table-container">
         <table class="data-table">
           <thead><tr><th>Fecha</th><th>Usuario</th><th>Ventas</th><th>Gastos</th><th>Neto</th></tr></thead>
-          <tbody id="historialCajaBody"></tbody>
+          <tbody id="historialCajaBody"><tr><td colspan="5">Presiona "Actualizar".</td></tr></tbody>
         </table>
       </div>
     </section>
@@ -596,17 +632,20 @@
     <section id="resumenes" class="content-section">
       <h2><i class="fas fa-list-alt"></i> Resúmenes y Reportes</h2>
       <div class="button-group">
-        <button onclick="loadSummary('VENTAS')" class="btn secondary-btn">
+        <button onclick="loadSummary('Ventas')" class="btn secondary-btn">
           <i class="fas fa-chart-bar"></i> Ventas
         </button>
-        <button onclick="loadSummary('COMPRAS')" class="btn secondary-btn">
+        <button onclick="loadSummary('Compras')" class="btn secondary-btn">
           <i class="fas fa-chart-bar"></i> Compras
         </button>
-        <button onclick="exportarCSV('ventas')" class="btn secondary-btn">
-          <i class="fas fa-file-csv"></i> CSV Ventas
+        <button onclick="loadSummary('Gastos')" class="btn secondary-btn">
+          <i class="fas fa-file-invoice-dollar"></i> Gastos
         </button>
-        <button onclick="exportarCSV('compras')" class="btn secondary-btn">
-          <i class="fas fa-file-csv"></i> CSV Compras
+        <button onclick="loadSummary('Actividad')" class="btn secondary-btn">
+          <i class="fas fa-user-secret"></i> Logs Auditoría
+        </button>
+        <button onclick="exportarCSV('resumen')" class="btn primary-btn" style="margin-left:auto;">
+          <i class="fas fa-file-csv"></i> Exportar CSV
         </button>
       </div>
       <div id="statusResumen" class="status-message hidden"></div>
@@ -669,7 +708,7 @@
           <input type="hidden" id="u_id">
           <div class="form-grid">
             <div class="form-group"><label>Usuario:</label><input type="text" id="u_usuario" required></div>
-            <div class="form-group"><label>Contraseña:</label><input type="password" id="u_password" required></div>
+            <div class="form-group"><label>Contraseña / PIN:</label><input type="password" id="u_password" required></div>
             <div class="form-group">
               <label>Rol:</label>
               <select id="u_rol">
@@ -692,7 +731,7 @@
       <h2><i class="fas fa-cog"></i> Configuración</h2>
 
       <!-- Modo oscuro -->
-      <div class="card" style="margin-bottom:1.5rem">
+      <div class="card mb-6">
         <h3><i class="fas fa-moon"></i> Apariencia</h3>
         <div style="display:flex;align-items:center;gap:1rem;margin-top:1rem">
           <span>Modo Oscuro</span>
@@ -704,36 +743,36 @@
       </div>
 
       <!-- Backup -->
-      <div class="card" style="margin-bottom:1.5rem">
+      <div class="card mb-6">
         <h3><i class="fas fa-database"></i> Copias de Seguridad</h3>
-        <div class="button-group" style="margin-top:1rem">
+        <div class="button-group mt-4">
           <button onclick="crearBackup()" class="btn secondary-btn">
-            <i class="fas fa-download"></i> Crear Backup
+            <i class="fas fa-download"></i> Crear Backup Completo (JSON)
           </button>
         </div>
       </div>
 
       <!-- DB -->
-      <div class="card">
-        <h3><i class="fas fa-server"></i> Base de Datos</h3>
-        <p style="margin:0.75rem 0">Esta acción creará/verificará las pestañas en Google Sheets.</p>
+      <div class="card" style="border:1px solid var(--danger-color); background:var(--danger-light);">
+        <h3 style="color:var(--danger-color)"><i class="fas fa-server"></i> Zona de Peligro - Base de Datos</h3>
+        <p class="mt-3 mb-3">Esta acción creará/verificará las pestañas en Google Sheets.</p>
         <div class="button-group">
           <button id="iniciarDBBtn" class="btn primary-btn">
-            <i class="fas fa-play-circle"></i> Iniciar Base de Datos
+            <i class="fas fa-play-circle"></i> Iniciar / Verificar Base de Datos
           </button>
           <button id="resetDBBtn" class="btn danger-btn">
-            <i class="fas fa-sync-alt"></i> Resetear Todo
+            <i class="fas fa-skull"></i> Resetear Todo
           </button>
         </div>
       </div>
-      <div id="statusConfig" class="status-message hidden" style="margin-top:1rem"></div>
+      <div id="statusConfig" class="status-message hidden mt-4"></div>
     </section>
 
   </main><!-- /main-content -->
 </div><!-- /mainApp -->
 
 <!-- Botón menú móvil -->
-<button class="mobile-toggle hidden" id="mobileToggle">
+<button class="mobile-toggle hidden no-print" id="mobileToggle">
   <i class="fas fa-bars"></i>
 </button>
 
