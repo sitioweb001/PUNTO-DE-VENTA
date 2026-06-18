@@ -3,92 +3,102 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Inventario ERP POS</title>
+  <title id="pageTitle">ERP POS</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <link rel="stylesheet" href="estilo.css">
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════════════════
-     TOAST NOTIFICATIONS
-════════════════════════════════════════════════════════════ -->
+<!-- ── TOASTS ── -->
 <div id="toastContainer" class="toast-container"></div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     TICKET DE IMPRESIÓN (oculto, solo para impresión)
-════════════════════════════════════════════════════════════ -->
-<div id="ticketPrintZone" class="print-only">
+<!-- ── ZONA DE IMPRESIÓN (ticket) ── -->
+<div id="ticketPrintZone" style="display:none">
+  <div class="ticket-logo" id="t_logo_wrap"></div>
   <div class="ticket-header">
-    <h2>MI NEGOCIO</h2><p>Ticket de Venta</p>
-    <p id="t_fecha"></p><p>Ticket #: <span id="t_id"></span></p>
+    <h2 id="t_empresa">Mi Negocio</h2>
+    <p id="t_empresa_dir"></p>
+    <p id="t_empresa_tel"></p>
+    <p id="t_fecha"></p>
+    <p>Ticket #<span id="t_id"></span></p>
   </div>
   <div class="ticket-body">
-    <p><strong>Cliente:</strong> <span id="t_cliente"></span></p>
+    <p><b>Cliente:</b> <span id="t_cliente"></span></p>
+    <p><b>Cajero:</b> <span id="t_cajero"></span></p>
+    <p><b>Pago:</b> <span id="t_pago"></span></p>
     <table class="ticket-table">
-      <thead><tr><th>Cant.</th><th>Producto</th><th>Total</th></tr></thead>
+      <thead><tr><th>Cant</th><th>Producto</th><th style="text-align:right">Total</th></tr></thead>
       <tbody id="t_items"></tbody>
     </table>
-    <div class="ticket-total">TOTAL: $<span id="t_total"></span></div>
   </div>
-  <div class="ticket-footer">¡Gracias por su compra!</div>
+  <div class="ticket-totales">
+    <div class="tl"><span>Subtotal:</span><span id="t_subtotal"></span></div>
+    <div class="tl"><span>Descuento:</span><span id="t_descuento"></span></div>
+    <div class="tl"><span>IVA (<span id="t_iva_pct"></span>%):</span><span id="t_iva"></span></div>
+    <div class="tl total"><span>TOTAL:</span><span id="t_total"></span></div>
+  </div>
+  <div class="ticket-footer">
+    <p id="t_mensaje">¡Gracias por su compra!</p>
+    <p id="t_redes"></p>
+  </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     MODAL ESCÁNER (QR / CÓDIGO DE BARRAS)
-════════════════════════════════════════════════════════════ -->
+<!-- ── MODAL ESCÁNER ── -->
 <div id="scannerModal" class="modal hidden">
-  <div class="modal-content" style="max-width:400px; text-align:center;">
-    <span class="close-modal" id="closeScanner">&times;</span>
-    <h3 class="mb-4"><i class="fas fa-camera"></i> Escanear Código</h3>
-    <div id="reader" style="width:100%;"></div>
-    <p class="mt-3 text-center" style="font-size:0.8rem; color:var(--text-muted);">Apunta la cámara al código de barras o QR.</p>
+  <div class="modal-content" style="max-width:420px; text-align:center">
+    <div class="modal-header">
+      <h3><i class="fas fa-camera"></i> Escanear Código</h3>
+      <button class="modal-close" id="closeScanner"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div id="reader" style="width:100%"></div>
+      <p class="text-muted mt-3" style="font-size:.8rem">Apunta la cámara al código de barras o QR</p>
+    </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     PANTALLA DE LOGIN
-════════════════════════════════════════════════════════════ -->
+<!-- ── LOGIN ── -->
 <div id="loginScreen" class="login-screen no-print">
   <div class="login-card">
     <div class="login-logo">
-      <i class="fas fa-store"></i>
-      <h1>Inventario ERP POS</h1>
-      <p>Sistema de Gestión</p>
+      <img id="loginLogo" src="logo.png" alt="Logo" class="logo-img logo-light" onerror="this.style.display='none'; document.getElementById('loginIconFallback').style.display='block'">
+      <img id="loginLogoDark" src="logo-dark.png" alt="Logo" class="logo-img logo-dark" onerror="this.style.display='none'">
+      <i id="loginIconFallback" class="fas fa-store" style="display:none; font-size:3rem; color:var(--primary-color)"></i>
+      <h1 id="loginNombreEmpresa">ERP POS</h1>
+      <p style="color:var(--text-muted); font-size:.9rem">Sistema de Gestión</p>
     </div>
     <div class="form-group">
-      <label for="login_usuario"><i class="fas fa-user"></i> Usuario</label>
+      <label><i class="fas fa-user"></i> Usuario</label>
       <input type="text" id="login_usuario" placeholder="Ingresa tu usuario" autocomplete="username">
     </div>
-    <div class="form-group" style="position:relative;">
-      <label for="login_password"><i class="fas fa-lock"></i> Contraseña / PIN</label>
-      <input type="password" id="login_password" placeholder="Ingresa tu contraseña o PIN" autocomplete="current-password">
-      <button type="button" class="toggle-pass" onclick="togglePassword()">
-        <i class="fas fa-eye" id="togglePassIcon"></i>
-      </button>
+    <div class="form-group" style="position:relative">
+      <label><i class="fas fa-lock"></i> Contraseña / PIN</label>
+      <input type="password" id="login_password" placeholder="Contraseña o PIN" autocomplete="current-password">
+      <button type="button" class="toggle-pass" onclick="togglePassword()"><i class="fas fa-eye" id="togglePassIcon"></i></button>
     </div>
     <div id="loginError" class="status-message error hidden"></div>
-    <button id="loginBtn" class="btn primary-btn full-width" style="max-width:100%;" onclick="handleLogin()">
+    <button id="loginBtn" class="btn primary-btn full-width mt-4" onclick="handleLogin()">
       <i class="fas fa-sign-in-alt"></i> Ingresar
     </button>
-    <p class="login-hint">Usuario por defecto: <b>admin</b> / <b>admin123</b></p>
+    <p class="login-hint">Usuario: <b>admin</b> / <b>admin123</b></p>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     DASHBOARD PRINCIPAL
-════════════════════════════════════════════════════════════ -->
+<!-- ════════════════════════════════════════════
+     APP PRINCIPAL
+════════════════════════════════════════════ -->
 <div class="dashboard-container hidden no-print" id="mainApp">
 
   <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
     <div class="logo">
-      <i class="fas fa-store"></i> Mi Negocio
+      <img src="logo.png" alt="Logo" class="logo-img logo-light" onerror="this.style.display='none'">
+      <img src="logo-dark.png" alt="Logo" class="logo-img logo-dark" onerror="this.style.display='none'">
+      <span id="sidebarNombreEmpresa" style="color:white; font-weight:700; font-size:1rem">ERP POS</span>
     </div>
-
-    <!-- Info de usuario logueado -->
     <div class="user-info-sidebar">
       <div class="user-avatar"><i class="fas fa-user-circle"></i></div>
       <div>
@@ -96,344 +106,284 @@
         <div class="user-role" id="sidebarUserRole">—</div>
       </div>
     </div>
-
     <nav class="sidebar-nav" id="sidebarNav">
-      <a href="#" data-section="dashboard" class="active">
-        <i class="fas fa-chart-pie"></i> Dashboard
-      </a>
-      <a href="#" data-section="ventas">
-        <i class="fas fa-cash-register"></i> Punto de Venta
-      </a>
-      <a href="#" data-section="inventario">
-        <i class="fas fa-cubes"></i> Inventario
-      </a>
-      <a href="#" data-section="productos" data-rol="empleado">
-        <i class="fas fa-box-open"></i> Registrar Producto
-      </a>
-      <a href="#" data-section="categorias" data-rol="admin">
-        <i class="fas fa-tags"></i> Categorías
-      </a>
-      <a href="#" data-section="compras" data-rol="empleado">
-        <i class="fas fa-truck-loading"></i> Compras
-      </a>
-      <a href="#" data-section="clientes" data-rol="empleado">
-        <i class="fas fa-users"></i> Clientes
-      </a>
-      <a href="#" data-section="proveedores" data-rol="empleado">
-        <i class="fas fa-building"></i> Proveedores
-      </a>
-      <a href="#" data-section="gastos" data-rol="empleado">
-        <i class="fas fa-money-bill-wave"></i> Gastos
-      </a>
-      <a href="#" data-section="caja" data-rol="empleado">
-        <i class="fas fa-lock"></i> Corte de Caja
-      </a>
-      <a href="#" data-section="papelera" data-rol="admin">
-        <i class="fas fa-trash-restore"></i> Papelera
-      </a>
-      <a href="#" data-section="resumenes">
-        <i class="fas fa-list-alt"></i> Resúmenes
-      </a>
-      <a href="#" data-section="actividad" data-rol="admin">
-        <i class="fas fa-history"></i> Actividad
-      </a>
-      <a href="#" data-section="usuarios" data-rol="admin">
-        <i class="fas fa-user-cog"></i> Usuarios
-      </a>
-      <a href="#" data-section="configuracion" data-rol="admin">
-        <i class="fas fa-cog"></i> Configuración
-      </a>
-      <a href="#" id="logoutBtn">
-        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
-      </a>
+      <a href="#" data-section="dashboard"    ><i class="fas fa-chart-pie"></i>      Dashboard</a>
+      <a href="#" data-section="ventas"       ><i class="fas fa-cash-register"></i>  Punto de Venta</a>
+      <a href="#" data-section="inventario"   ><i class="fas fa-cubes"></i>           Inventario</a>
+      <a href="#" data-section="productos"    ><i class="fas fa-box-open"></i>        Registrar Producto</a>
+      <a href="#" data-section="categorias"   ><i class="fas fa-tags"></i>            Categorías</a>
+      <a href="#" data-section="compras"      ><i class="fas fa-truck-loading"></i>   Compras</a>
+      <a href="#" data-section="devoluciones" ><i class="fas fa-undo-alt"></i>        Devoluciones</a>
+      <a href="#" data-section="clientes"     ><i class="fas fa-users"></i>           Clientes</a>
+      <a href="#" data-section="proveedores"  ><i class="fas fa-building"></i>        Proveedores</a>
+      <a href="#" data-section="gastos"       ><i class="fas fa-money-bill-wave"></i> Gastos</a>
+      <a href="#" data-section="caja"         ><i class="fas fa-lock"></i>            Corte de Caja</a>
+      <a href="#" data-section="reportes"     ><i class="fas fa-chart-bar"></i>       Reportes</a>
+      <a href="#" data-section="papelera"     ><i class="fas fa-trash-restore"></i>   Papelera</a>
+      <a href="#" data-section="actividad"    ><i class="fas fa-history"></i>         Actividad</a>
+      <a href="#" data-section="usuarios"     ><i class="fas fa-user-cog"></i>        Usuarios</a>
+      <a href="#" data-section="combos"       ><i class="fas fa-layer-group"></i>    Combos</a>
+      <a href="#" data-section="importador"   ><i class="fas fa-file-import"></i>    Importar Datos</a>
+      <a href="#" data-section="facturas"     ><i class="fas fa-file-invoice"></i>   Facturas</a>
+      <a href="#" data-section="soporte"      ><i class="fas fa-headset"></i>        Soporte</a>
+      <a href="#" data-section="empresa"      ><i class="fas fa-store"></i>           Mi Empresa</a>
+      <a href="#" data-section="configuracion"><i class="fas fa-cog"></i>             Configuración</a>
+      <a href="#" id="logoutBtn"              ><i class="fas fa-sign-out-alt"></i>    Cerrar Sesión</a>
     </nav>
+    <div style="padding:1rem 1.5rem;border-top:1px solid rgba(255,255,255,.1)">
+      <button onclick="toggleNotifPanel()" style="background:none;border:none;color:rgba(255,255,255,.8);cursor:pointer;display:flex;align-items:center;gap:.5rem;font-size:.875rem;width:100%">
+        <span style="position:relative"><i class="fas fa-bell"></i><span class="notif-badge hidden" id="notifBadge">0</span></span>
+        <span>Notificaciones</span>
+      </button>
+    </div>
   </aside>
 
-  <!-- CONTENIDO PRINCIPAL -->
+  <!-- Panel notificaciones -->
+  <div id="notifPanel" class="notif-panel hidden">
+    <div class="notif-header">
+      <span><i class="fas fa-bell"></i> Notificaciones</span>
+      <button onclick="marcarTodasLeidas()" style="background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;font-size:.75rem">Marcar todas leídas</button>
+    </div>
+    <div class="notif-list" id="notifList"><div class="notif-vacia">Sin notificaciones</div></div>
+  </div>
+
+  <!-- MAIN -->
   <main class="main-content">
 
     <!-- ── DASHBOARD ── -->
     <section id="dashboard" class="content-section active">
       <h2><i class="fas fa-chart-pie"></i> Dashboard</h2>
-
       <div class="button-group">
-        <button id="cargarDatosGraficosBtn" class="btn primary-btn">
-          <i class="fas fa-sync"></i> Actualizar
-        </button>
+        <button id="cargarDatosGraficosBtn" class="btn secondary-btn"><i class="fas fa-sync"></i> Actualizar</button>
       </div>
       <div id="statusDashboard" class="status-message hidden"></div>
-
-      <!-- Alertas de stock bajo -->
       <div id="stockAlerts" class="stock-alerts hidden"></div>
-
-      <!-- Stats -->
       <div class="stats-grid">
-        <div class="stat-card">
-          <i class="fas fa-shopping-cart"></i>
-          <div class="stat-value" id="totalVentas">$0.00</div>
-          <div class="stat-label">Ingresos (Ventas)</div>
-        </div>
-        <div class="stat-card">
-          <i class="fas fa-truck-loading" style="color:var(--info-color)"></i>
-          <div class="stat-value" id="totalCompras">$0.00</div>
-          <div class="stat-label">Inversión (Compras)</div>
-        </div>
-        <div class="stat-card">
-          <i class="fas fa-money-bill-wave" style="color:var(--warning-color)"></i>
-          <div class="stat-value" id="totalGastos">$0.00</div>
-          <div class="stat-label">Total Gastos</div>
-        </div>
-        <div class="stat-card">
-          <i class="fas fa-chart-line" style="color:var(--success-color)"></i>
-          <div class="stat-value" id="totalGanancias">$0.00</div>
-          <div class="stat-label">Ganancia Líquida</div>
-        </div>
-        <div class="stat-card">
-          <i class="fas fa-calendar-day" style="color:var(--warning-color)"></i>
-          <div class="stat-value" id="ventasHoy">$0.00</div>
-          <div class="stat-label">Ventas Hoy</div>
-        </div>
-        <div class="stat-card">
-          <i class="fas fa-calendar-alt" style="color:var(--secondary-color)"></i>
-          <div class="stat-value" id="ventasMes">$0.00</div>
-          <div class="stat-label">Ventas Este Mes</div>
-        </div>
+        <div class="stat-card"><i class="fas fa-shopping-cart"></i><div class="stat-value" id="totalVentas">$0.00</div><div class="stat-label">Ingresos Totales</div></div>
+        <div class="stat-card"><i class="fas fa-truck-loading" style="color:var(--info-color)"></i><div class="stat-value" id="totalCompras">$0.00</div><div class="stat-label">Total Compras</div></div>
+        <div class="stat-card"><i class="fas fa-money-bill-wave" style="color:var(--warning-color)"></i><div class="stat-value" id="totalGastos">$0.00</div><div class="stat-label">Total Gastos</div></div>
+        <div class="stat-card"><i class="fas fa-chart-line" style="color:var(--success-color)"></i><div class="stat-value" id="totalGanancias">$0.00</div><div class="stat-label">Ganancia Neta</div></div>
+        <div class="stat-card"><i class="fas fa-calendar-day" style="color:var(--warning-color)"></i><div class="stat-value" id="ventasHoy">$0.00</div><div class="stat-label">Ventas Hoy</div></div>
+        <div class="stat-card"><i class="fas fa-calendar-alt" style="color:var(--secondary-color)"></i><div class="stat-value" id="ventasMes">$0.00</div><div class="stat-label">Ventas Este Mes</div></div>
       </div>
-
-      <!-- Top productos + agotados -->
       <div class="dashboard-extra">
-        <div class="card">
-          <h3><i class="fas fa-fire" style="color:var(--danger-color)"></i> Top Productos Vendidos</h3>
-          <div id="topProductos"><p class="text-muted">Cargando...</p></div>
-        </div>
-        <div class="card">
-          <h3><i class="fas fa-exclamation-triangle" style="color:var(--warning-color)"></i> Stock Crítico</h3>
-          <div id="stockCritico"><p class="text-muted">Cargando...</p></div>
-        </div>
+        <div class="card"><h3><i class="fas fa-fire" style="color:var(--danger-color)"></i> Top 10 Más Vendidos</h3><div id="topProductos"><p class="text-muted">Cargando...</p></div></div>
+        <div class="card"><h3><i class="fas fa-exclamation-triangle" style="color:var(--warning-color)"></i> Stock Crítico</h3><div id="stockCritico"><p class="text-muted">Cargando...</p></div></div>
+        <div class="card"><h3><i class="fas fa-trophy" style="color:var(--warning-color)"></i> Más Rentables</h3><div id="topRentables"><p class="text-muted">Cargando...</p></div></div>
       </div>
-
-      <!-- Gráficos -->
-      <div class="chart-container">
-        <canvas id="resumenFinancieroChart"></canvas>
-      </div>
-      <div class="chart-container">
-        <canvas id="tendenciasChart"></canvas>
-      </div>
+      <div class="chart-container"><canvas id="resumenFinancieroChart"></canvas></div>
+      <div class="chart-container"><canvas id="tendenciasChart"></canvas></div>
     </section>
 
-    <!-- ── VENTAS (PUNTO DE VENTA) ── -->
+    <!-- ── PUNTO DE VENTA (CARRITO) ── -->
     <section id="ventas" class="content-section">
       <h2><i class="fas fa-cash-register"></i> Punto de Venta</h2>
-      <form id="ventaForm" class="form-grid">
-        <div class="form-group">
-          <label>Escáner / Buscador:</label>
-          <div class="search-with-scan">
-            <input type="text" id="v_query" placeholder="ID, código, nombre o cámara..." required>
-            <button type="button" class="btn secondary-btn btn-scan" onclick="openScanner('v')"><i class="fas fa-camera"></i></button>
+      <div class="carrito-container">
+        <!-- Buscador -->
+        <div>
+          <div class="form-grid" style="margin-bottom:1rem">
+            <div class="form-group full-width">
+              <label>Buscar producto (nombre, código o cámara):</label>
+              <div class="search-with-scan">
+                <input type="text" id="v_query" placeholder="Escribe para buscar..." autocomplete="off">
+                <button type="button" class="btn secondary-btn btn-scan" onclick="openScanner('v')"><i class="fas fa-camera"></i></button>
+              </div>
+              <div id="v_sugerencias" class="sugerencias-dropdown hidden"></div>
+            </div>
+          </div>
+          <div id="v_producto_seleccionado" class="hidden buscador-resultado">
+            <div class="prod-img-placeholder" id="v_prod_img_wrap"><i class="fas fa-box"></i></div>
+            <div class="buscador-resultado-info">
+              <h4 id="v_prod_nombre">—</h4>
+              <p id="v_prod_info">—</p>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:.5rem; align-items:flex-end">
+              <input type="number" id="v_qty" value="1" min="1" style="width:70px; text-align:center" class="form-control">
+              <input type="number" id="v_precio_unit" step="0.01" style="width:100px" class="form-control" placeholder="Precio">
+              <button class="btn primary-btn" style="height:36px; min-width:auto; padding:0 1rem" onclick="agregarAlCarrito()">
+                <i class="fas fa-plus"></i> Agregar
+              </button>
+            </div>
+            <input type="hidden" id="v_prod_id">
+          </div>
+
+          <!-- Opciones de venta -->
+          <div class="form-grid mt-4">
+            <div class="form-group">
+              <label>Cliente:</label>
+              <input type="text" id="v_cliente_nombre" list="listClientes" placeholder="Mostrador">
+              <datalist id="listClientes"></datalist>
+              <input type="hidden" id="v_cliente_id">
+            </div>
+            <div class="form-group">
+              <label>Método de Pago:</label>
+              <select id="v_metodo_pago">
+                <option value="Efectivo">💵 Efectivo</option>
+                <option value="Tarjeta">💳 Tarjeta</option>
+                <option value="Transferencia">📱 Transferencia</option>
+                <option value="Crédito">📋 Crédito</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Descuento Global ($):</label>
+              <input type="number" id="v_descuento" value="0" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+              <label>Notas:</label>
+              <input type="text" id="v_notas" placeholder="Opcional">
+            </div>
+          </div>
+          <div id="statusVenta" class="status-message hidden"></div>
+        </div>
+
+        <!-- Panel Carrito -->
+        <div class="carrito-panel" id="carritoPanel">
+          <div class="carrito-header">
+            <span><i class="fas fa-shopping-cart"></i> Carrito (<span id="carrito_count">0</span>)</span>
+            <button onclick="limpiarCarrito()" style="background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;font-size:.8rem"><i class="fas fa-trash"></i> Limpiar</button>
+          </div>
+          <div class="carrito-items" id="carritoItems">
+            <div class="carrito-vacio"><i class="fas fa-shopping-cart"></i><p>Carrito vacío</p></div>
+          </div>
+          <div class="carrito-footer">
+            <div class="carrito-linea"><span>Subtotal:</span><span id="c_subtotal">$0.00</span></div>
+            <div class="carrito-linea"><span>Descuento:</span><span id="c_descuento">-$0.00</span></div>
+            <div class="carrito-linea"><span>IVA (<span id="c_iva_pct">0</span>%):</span><span id="c_iva">$0.00</span></div>
+            <div class="carrito-total"><span>TOTAL:</span><span id="c_total">$0.00</span></div>
+            <button id="btnFinalizarVenta" class="btn primary-btn full-width" style="max-width:100%; height:48px; font-size:1rem" onclick="finalizarVenta()">
+              <i class="fas fa-check-circle"></i> Cobrar y Emitir Ticket
+            </button>
           </div>
         </div>
-        <div class="form-group">
-          <label>Cantidad Vendida:</label>
-          <input type="number" id="v_cantidad" required min="1" value="1">
-        </div>
-        <div class="form-group">
-          <label>Precio Unitario Venta:</label>
-          <input type="number" id="v_precio_venta" required min="0.01" step="0.01">
-        </div>
-        <div class="form-group">
-          <label>Cliente (Opcional):</label>
-          <input type="text" id="v_cliente" list="listClientes">
-          <datalist id="listClientes"></datalist>
-        </div>
-        <div class="product-details hidden full-width" id="v_product_details"></div>
-        <input type="hidden" id="v_producto_id">
-        <div class="full-width">
-          <button type="submit" class="btn primary-btn" id="v_submit_btn" disabled>
-            <i class="fas fa-hand-holding-usd"></i> Vender e Imprimir Ticket
-          </button>
-        </div>
-      </form>
-      <div id="statusVenta" class="status-message hidden"></div>
+      </div>
     </section>
 
     <!-- ── INVENTARIO ── -->
     <section id="inventario" class="content-section">
-      <h2><i class="fas fa-cubes"></i> Inventario Actual</h2>
-
-      <!-- Filtros de búsqueda avanzada -->
+      <h2><i class="fas fa-cubes"></i> Inventario</h2>
       <div class="filter-panel mb-4">
-        <h4 class="mb-2" style="color:var(--text-main)"><i class="fas fa-filter"></i> Búsqueda Avanzada</h4>
-        <div class="form-grid" style="grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; margin-bottom:0;">
-          <input type="text" id="f_texto" placeholder="🔎 Buscar por nombre o código..." oninput="filtrarInventario()">
-          <select id="f_categoria" onchange="filtrarInventario()"><option value="">Todas las Categorías</option></select>
-          <select id="f_stock" onchange="filtrarInventario()">
-            <option value="">Cualquier Nivel de Stock</option>
-            <option value="bajo">⚠️ Stock Bajo / Agotado</option>
-            <option value="agotado">❌ Solo Agotados</option>
-            <option value="ok">✅ Stock Normal</option>
+        <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.75rem;margin-bottom:0">
+          <input type="text" id="f_texto"      placeholder="🔎 Nombre o código..." oninput="filtrarInventario()">
+          <select id="f_categoria"              onchange="filtrarInventario()"><option value="">Todas las categorías</option></select>
+          <select id="f_stock"                  onchange="filtrarInventario()">
+            <option value="">Cualquier stock</option>
+            <option value="bajo">⚠️ Stock bajo</option>
+            <option value="agotado">❌ Agotados</option>
+            <option value="ok">✅ Normal</option>
           </select>
-          <input type="number" id="f_min_precio" placeholder="Precio Min ($)" oninput="filtrarInventario()">
-          <input type="number" id="f_max_precio" placeholder="Precio Max ($)" oninput="filtrarInventario()">
-          <button id="cargarInventarioBtn" class="btn secondary-btn"><i class="fas fa-sync"></i> Recargar Servidor</button>
+          <select id="f_favorito"               onchange="filtrarInventario()">
+            <option value="">Todos</option>
+            <option value="si">⭐ Favoritos</option>
+          </select>
+          <input type="number" id="f_min_precio" placeholder="Precio min ($)" oninput="filtrarInventario()">
+          <input type="number" id="f_max_precio" placeholder="Precio max ($)" oninput="filtrarInventario()">
+          <button id="cargarInventarioBtn" class="btn secondary-btn"><i class="fas fa-sync"></i> Recargar</button>
           <button onclick="exportarCSV('inventario')" class="btn secondary-btn"><i class="fas fa-file-csv"></i> CSV</button>
         </div>
       </div>
-
       <div id="statusInventario" class="status-message hidden"></div>
-
       <div class="data-table-container">
         <table class="data-table">
-          <thead>
-            <tr id="trHeadInventario">
-              <th>ID</th><th>Nombre</th><th>Código</th><th>Categoría</th>
-              <th>Stock</th><th>P. Compra</th><th>P. Venta</th><th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="inventarioTableBody">
-            <tr><td colspan="8">Presiona "Recargar Servidor" para cargar.</td></tr>
-          </tbody>
+          <thead><tr><th>Imagen</th><th>Nombre</th><th>Código</th><th>Categoría</th><th>Stock</th><th>P.Compra</th><th>P.Venta</th><th>Fav</th><th>Acciones</th></tr></thead>
+          <tbody id="inventarioTableBody"><tr><td colspan="9">Presiona "Recargar".</td></tr></tbody>
         </table>
       </div>
     </section>
 
     <!-- ── REGISTRAR PRODUCTO ── -->
     <section id="productos" class="content-section">
-      <h2><i class="fas fa-box-open"></i> Registrar Nuevo Producto</h2>
+      <h2><i class="fas fa-box-open"></i> Registrar Producto</h2>
       <form id="productoForm" class="form-grid">
         <div class="form-group">
-          <label>Código Único / Código de Barras:</label>
+          <label>Código / Código de barras:</label>
           <div class="search-with-scan">
             <input type="text" id="p_codigo" required placeholder="Ej: PROD-001">
             <button type="button" class="btn secondary-btn btn-scan" onclick="openScanner('p')"><i class="fas fa-camera"></i></button>
           </div>
         </div>
-        <div class="form-group">
-          <label>Nombre:</label>
-          <input type="text" id="p_nombre" required>
+        <div class="form-group"><label>Nombre:</label><input type="text" id="p_nombre" required></div>
+        <div class="form-group"><label>Categoría:</label><select id="p_categoria" required><option value="" disabled selected>Seleccione...</option></select></div>
+        <div class="form-group"><label>Precio Compra:</label><input type="number" id="p_precio_compra" required min="0.01" step="0.01"></div>
+        <div class="form-group"><label>Precio Venta:</label><input type="number" id="p_precio_venta" required min="0.01" step="0.01"></div>
+        <div class="form-group"><label>Stock Inicial:</label><input type="number" id="p_stock" required min="0" value="0"></div>
+        <div class="form-group"><label>Stock Mínimo (alerta):</label><input type="number" id="p_stock_minimo" required min="1" value="5"></div>
+        <div class="form-group"><label>URL Imagen (opcional):</label><input type="url" id="p_imagen_url" placeholder="https://..."></div>
+        <div class="form-group" style="display:flex;align-items:center;gap:.75rem;padding-top:1.5rem">
+          <input type="checkbox" id="p_favorito" style="width:18px;height:18px">
+          <label for="p_favorito" style="margin:0">⭐ Producto favorito (aparece primero en ventas)</label>
         </div>
-        <div class="form-group">
-          <label>Categoría:</label>
-          <select id="p_categoria" required>
-            <option value="" disabled selected>Cargando...</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Precio Compra:</label>
-          <input type="number" id="p_precio_compra" required min="0.01" step="0.01">
-        </div>
-        <div class="form-group">
-          <label>Precio Venta:</label>
-          <input type="number" id="p_precio_venta" required min="0.01" step="0.01">
-        </div>
-        <div class="form-group">
-          <label>Stock Inicial:</label>
-          <input type="number" id="p_stock" required min="0">
-        </div>
-        <div class="form-group">
-          <label>Alerta Stock Mínimo:</label>
-          <input type="number" id="p_stock_minimo" required min="1" value="5">
-        </div>
-        <div class="full-width">
-          <button type="submit" class="btn primary-btn">
-            <i class="fas fa-save"></i> Registrar Producto
-          </button>
-        </div>
+        <div class="full-width"><button type="submit" class="btn primary-btn"><i class="fas fa-save"></i> Registrar Producto</button></div>
       </form>
       <div id="statusProducto" class="status-message hidden"></div>
     </section>
 
-    <!-- ── MODAL EDITAR PRODUCTO ── -->
+    <!-- Modal Editar Producto -->
     <div id="modalEditarProducto" class="modal hidden">
       <div class="modal-content">
-        <div class="modal-header">
-          <h3><i class="fas fa-edit"></i> Editar Producto</h3>
-          <button class="modal-close" onclick="cerrarModal('modalEditarProducto')"><i class="fas fa-times"></i></button>
-        </div>
+        <div class="modal-header"><h3><i class="fas fa-edit"></i> Editar Producto</h3><button class="modal-close" onclick="cerrarModal('modalEditarProducto')"><i class="fas fa-times"></i></button></div>
         <div class="modal-body">
           <form id="editProductoForm" class="form-grid">
             <input type="hidden" id="ep_id">
-            <div class="form-group">
-              <label>Código:</label>
-              <input type="text" id="ep_codigo" required>
-            </div>
-            <div class="form-group">
-              <label>Nombre:</label>
-              <input type="text" id="ep_nombre" required>
-            </div>
-            <div class="form-group">
-              <label>Categoría:</label>
-              <select id="ep_categoria" required></select>
-            </div>
-            <div class="form-group">
-              <label>Precio Compra:</label>
-              <input type="number" id="ep_precio_compra" step="0.01" required>
-            </div>
-            <div class="form-group">
-              <label>Precio Venta:</label>
-              <input type="number" id="ep_precio_venta" step="0.01" required>
-            </div>
-            <div class="form-group">
-              <label>Stock:</label>
-              <input type="number" id="ep_stock" required>
-            </div>
-            <div class="form-group">
-              <label>Alerta Stock Mínimo:</label>
-              <input type="number" id="ep_stock_minimo" required min="1">
+            <div class="form-group"><label>Código:</label><input type="text" id="ep_codigo"></div>
+            <div class="form-group"><label>Nombre:</label><input type="text" id="ep_nombre" required></div>
+            <div class="form-group"><label>Categoría:</label><select id="ep_categoria"></select></div>
+            <div class="form-group"><label>Precio Compra:</label><input type="number" id="ep_precio_compra" step="0.01"></div>
+            <div class="form-group"><label>Precio Venta:</label><input type="number" id="ep_precio_venta" step="0.01"></div>
+            <div class="form-group"><label>Stock:</label><input type="number" id="ep_stock"></div>
+            <div class="form-group"><label>Stock Mínimo:</label><input type="number" id="ep_stock_minimo"></div>
+            <div class="form-group"><label>URL Imagen:</label><input type="url" id="ep_imagen_url"></div>
+            <div class="form-group" style="display:flex;align-items:center;gap:.75rem;padding-top:1.5rem">
+              <input type="checkbox" id="ep_favorito" style="width:18px;height:18px">
+              <label for="ep_favorito" style="margin:0">⭐ Favorito</label>
             </div>
           </form>
         </div>
         <div class="modal-footer">
           <button class="btn secondary-btn" onclick="cerrarModal('modalEditarProducto')">Cancelar</button>
-          <button class="btn primary-btn" onclick="guardarEdicionProducto()">
-            <i class="fas fa-save"></i> Guardar Cambios
-          </button>
+          <button class="btn primary-btn" onclick="guardarEdicionProducto()"><i class="fas fa-save"></i> Guardar</button>
         </div>
       </div>
     </div>
 
     <!-- ── CATEGORÍAS ── -->
     <section id="categorias" class="content-section">
-      <h2><i class="fas fa-tags"></i> Gestión de Categorías</h2>
+      <h2><i class="fas fa-tags"></i> Categorías</h2>
       <form id="categoriaForm" class="form-grid single-col">
-        <div class="form-group">
-          <label>Nombre de la Categoría:</label>
-          <input type="text" id="c_nombre" required placeholder="Ej: Electrónica, Ropa...">
-        </div>
-        <button type="submit" class="btn secondary-btn">
-          <i class="fas fa-plus"></i> Agregar
-        </button>
+        <div class="form-group"><label>Emoji:</label><input type="text" id="c_emoji" placeholder="📦" maxlength="2" style="width:70px"></div>
+        <div class="form-group"><label>Nombre:</label><input type="text" id="c_nombre" required placeholder="Ej: Bebidas"></div>
+        <button type="submit" class="btn secondary-btn"><i class="fas fa-plus"></i> Agregar</button>
       </form>
       <div id="statusCategoria" class="status-message hidden"></div>
-      <h3 class="mt-6 mb-2">Categorías Existentes</h3>
-      <ul id="listaCategorias" class="lista-categorias"><li>Cargando...</li></ul>
+      <ul id="listaCategorias" class="lista-categorias mt-6"><li>Cargando...</li></ul>
     </section>
 
     <!-- ── COMPRAS ── -->
     <section id="compras" class="content-section">
       <h2><i class="fas fa-truck-loading"></i> Ingreso de Mercadería</h2>
       <form id="compraForm" class="form-grid">
-        <div class="form-group">
-          <label>Escáner / Buscador:</label>
+        <div class="form-group full-width">
+          <label>Buscar producto:</label>
           <div class="search-with-scan">
-            <input type="text" id="co_query" placeholder="ID, código o nombre..." required>
+            <input type="text" id="co_query" placeholder="Nombre, código o cámara..." required>
             <button type="button" class="btn secondary-btn btn-scan" onclick="openScanner('co')"><i class="fas fa-camera"></i></button>
           </div>
+          <div id="co_sugerencias" class="sugerencias-dropdown hidden"></div>
+          <div id="co_producto_seleccionado" class="hidden buscador-resultado mt-3">
+            <div class="prod-img-placeholder"><i class="fas fa-box"></i></div>
+            <div class="buscador-resultado-info">
+              <h4 id="co_prod_nombre">—</h4>
+              <p id="co_prod_info">—</p>
+            </div>
+          </div>
         </div>
-        <div class="form-group">
-          <label>Cantidad Comprada:</label>
-          <input type="number" id="co_cantidad" required min="1" value="1">
-        </div>
-        <div class="form-group">
-          <label>Precio Unitario Compra:</label>
-          <input type="number" id="co_precio_compra" required min="0.01" step="0.01">
-        </div>
-        <div class="form-group">
-          <label>Proveedor (Opcional):</label>
-          <input type="text" id="co_proveedor" list="listProveedores">
-          <datalist id="listProveedores"></datalist>
-        </div>
-        <div class="product-details hidden full-width" id="co_product_details"></div>
         <input type="hidden" id="co_producto_id">
+        <div class="form-group"><label>Cantidad:</label><input type="number" id="co_cantidad" required min="1" value="1"></div>
+        <div class="form-group"><label>Precio Compra Unitario:</label><input type="number" id="co_precio_compra" required min="0.01" step="0.01"></div>
+        <div class="form-group"><label>Proveedor (opcional):</label><input type="text" id="co_proveedor_nombre" list="listProveedores" placeholder="Nombre proveedor"><datalist id="listProveedores"></datalist></div>
+        <div class="form-group"><label>Actualizar precio compra del producto:</label>
+          <select id="co_actualizar_precio"><option value="1">Sí, actualizar</option><option value="0">No actualizar</option></select>
+        </div>
+        <div class="form-group"><label>Notas:</label><input type="text" id="co_notas" placeholder="Opcional"></div>
         <div class="full-width">
           <button type="submit" class="btn primary-btn" id="co_submit_btn" disabled>
             <i class="fas fa-cart-plus"></i> Registrar Compra
@@ -443,43 +393,86 @@
       <div id="statusCompra" class="status-message hidden"></div>
     </section>
 
-    <!-- ── CLIENTES ── -->
-    <section id="clientes" class="content-section">
-      <h2><i class="fas fa-users"></i> Gestión de Clientes</h2>
-      <div class="button-group">
-        <button onclick="abrirModalNuevoCliente()" class="btn primary-btn">
-          <i class="fas fa-plus"></i> Nuevo Cliente
-        </button>
-        <button onclick="cargarClientes()" class="btn secondary-btn">
-          <i class="fas fa-sync"></i> Refrescar
-        </button>
-        <button onclick="exportarCSV('clientes')" class="btn secondary-btn">
-          <i class="fas fa-file-csv"></i> CSV
-        </button>
-      </div>
-      <div id="statusCliente" class="status-message hidden"></div>
+    <!-- ── DEVOLUCIONES ── -->
+    <section id="devoluciones" class="content-section">
+      <h2><i class="fas fa-undo-alt"></i> Devoluciones</h2>
+      <form id="devolucionForm" class="form-grid">
+        <div class="form-group"><label>N° de Venta original (ID):</label><input type="text" id="dev_venta_id" placeholder="Opcional"></div>
+        <div class="form-group">
+          <label>Producto devuelto:</label>
+          <div class="search-with-scan">
+            <input type="text" id="dev_query" placeholder="Buscar producto...">
+            <button type="button" class="btn secondary-btn btn-scan" onclick="openScanner('dev')"><i class="fas fa-camera"></i></button>
+          </div>
+          <div id="dev_sugerencias" class="sugerencias-dropdown hidden"></div>
+        </div>
+        <input type="hidden" id="dev_producto_id">
+        <input type="hidden" id="dev_producto_nombre">
+        <div class="form-group"><label>Cantidad:</label><input type="number" id="dev_cantidad" min="1" value="1"></div>
+        <div class="form-group">
+          <label>Motivo:</label>
+          <select id="dev_motivo">
+            <option>Producto defectuoso</option>
+            <option>Producto incorrecto</option>
+            <option>No era lo que quería</option>
+            <option>Cambio de talla/modelo</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div class="form-group" style="display:flex;align-items:center;gap:.75rem;padding-top:1.5rem">
+          <input type="checkbox" id="dev_regresar_stock" checked style="width:18px;height:18px">
+          <label for="dev_regresar_stock" style="margin:0">Devolver al inventario</label>
+        </div>
+        <div class="full-width">
+          <button type="submit" class="btn primary-btn"><i class="fas fa-undo"></i> Registrar Devolución</button>
+        </div>
+      </form>
+      <div id="statusDevolucion" class="status-message hidden"></div>
+      <h3 class="mt-6 mb-2">Historial de Devoluciones</h3>
+      <div class="button-group"><button onclick="cargarDevoluciones()" class="btn secondary-btn"><i class="fas fa-sync"></i> Cargar</button></div>
       <div class="data-table-container">
         <table class="data-table">
-          <thead><tr><th>ID</th><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Dirección</th><th>Acciones</th></tr></thead>
-          <tbody id="clientesTableBody"><tr><td colspan="6">Presiona "Refrescar".</td></tr></tbody>
+          <thead><tr><th>Fecha</th><th>Venta ID</th><th>Producto</th><th>Cant.</th><th>Motivo</th><th>Usuario</th><th>Estado</th></tr></thead>
+          <tbody id="devolucionesTableBody"><tr><td colspan="7">Presiona "Cargar".</td></tr></tbody>
         </table>
       </div>
     </section>
 
-    <!-- Modal Clientes -->
+    <!-- ── CLIENTES ── -->
+    <section id="clientes" class="content-section">
+      <h2><i class="fas fa-users"></i> Clientes</h2>
+      <div class="button-group">
+        <button onclick="abrirModalNuevoCliente()" class="btn primary-btn"><i class="fas fa-plus"></i> Nuevo Cliente</button>
+        <button onclick="cargarClientes()" class="btn secondary-btn"><i class="fas fa-sync"></i> Refrescar</button>
+        <button onclick="exportarCSV('clientes')" class="btn secondary-btn"><i class="fas fa-file-csv"></i> CSV</button>
+      </div>
+      <div id="statusCliente" class="status-message hidden"></div>
+      <input type="text" id="f_clientes" placeholder="🔎 Buscar cliente..." style="margin-bottom:1rem;max-width:340px" oninput="filtrarClientes()">
+      <div class="data-table-container">
+        <table class="data-table">
+          <thead><tr><th>Nombre</th><th>Apellido</th><th>Tipo</th><th>Teléfono</th><th>DUI/NIT</th><th>Correo</th><th>Acciones</th></tr></thead>
+          <tbody id="clientesTableBody"><tr><td colspan="7">Presiona "Refrescar".</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Modal Cliente -->
     <div id="modalCliente" class="modal hidden">
       <div class="modal-content">
-        <div class="modal-header">
-          <h3 id="modalClienteTitulo"><i class="fas fa-user-plus"></i> Nuevo Cliente</h3>
-          <button class="modal-close" onclick="cerrarModal('modalCliente')"><i class="fas fa-times"></i></button>
-        </div>
+        <div class="modal-header"><h3 id="modalClienteTitulo"><i class="fas fa-user-plus"></i> Nuevo Cliente</h3><button class="modal-close" onclick="cerrarModal('modalCliente')"><i class="fas fa-times"></i></button></div>
         <div class="modal-body">
           <input type="hidden" id="cl_id">
           <div class="form-grid">
             <div class="form-group"><label>Nombre:</label><input type="text" id="cl_nombre" required></div>
-            <div class="form-group"><label>Teléfono:</label><input type="text" id="cl_telefono"></div>
+            <div class="form-group"><label>Apellido:</label><input type="text" id="cl_apellido"></div>
+            <div class="form-group"><label>Teléfono:</label><input type="tel" id="cl_telefono"></div>
+            <div class="form-group"><label>DUI / NIT:</label><input type="text" id="cl_dui_nit"></div>
             <div class="form-group"><label>Correo:</label><input type="email" id="cl_correo"></div>
+            <div class="form-group"><label>Tipo:</label>
+              <select id="cl_tipo"><option value="regular">Regular</option><option value="frecuente">Frecuente</option><option value="vip">VIP</option></select>
+            </div>
             <div class="form-group full-width"><label>Dirección:</label><input type="text" id="cl_direccion"></div>
+            <div class="form-group full-width"><label>Observaciones:</label><input type="text" id="cl_observaciones"></div>
           </div>
         </div>
         <div class="modal-footer">
@@ -491,42 +484,35 @@
 
     <!-- ── PROVEEDORES ── -->
     <section id="proveedores" class="content-section">
-      <h2><i class="fas fa-building"></i> Gestión de Proveedores</h2>
+      <h2><i class="fas fa-building"></i> Proveedores</h2>
       <div class="button-group">
-        <button onclick="abrirModalNuevoProveedor()" class="btn primary-btn">
-          <i class="fas fa-plus"></i> Nuevo Proveedor
-        </button>
-        <button onclick="cargarProveedores()" class="btn secondary-btn">
-          <i class="fas fa-sync"></i> Refrescar
-        </button>
-        <button onclick="exportarCSV('proveedores')" class="btn secondary-btn">
-          <i class="fas fa-file-csv"></i> CSV
-        </button>
+        <button onclick="abrirModalNuevoProveedor()" class="btn primary-btn"><i class="fas fa-plus"></i> Nuevo Proveedor</button>
+        <button onclick="cargarProveedores()" class="btn secondary-btn"><i class="fas fa-sync"></i> Refrescar</button>
+        <button onclick="exportarCSV('proveedores')" class="btn secondary-btn"><i class="fas fa-file-csv"></i> CSV</button>
       </div>
       <div id="statusProveedor" class="status-message hidden"></div>
       <div class="data-table-container">
         <table class="data-table">
-          <thead><tr><th>ID</th><th>Nombre</th><th>Empresa</th><th>Teléfono</th><th>Correo</th><th>Dirección</th><th>Acciones</th></tr></thead>
-          <tbody id="proveedoresTableBody"><tr><td colspan="7">Presiona "Refrescar".</td></tr></tbody>
+          <thead><tr><th>Nombre</th><th>Empresa</th><th>Teléfono</th><th>Correo</th><th>Contacto</th><th>Acciones</th></tr></thead>
+          <tbody id="proveedoresTableBody"><tr><td colspan="6">Presiona "Refrescar".</td></tr></tbody>
         </table>
       </div>
     </section>
 
-    <!-- Modal Proveedores -->
+    <!-- Modal Proveedor -->
     <div id="modalProveedor" class="modal hidden">
       <div class="modal-content">
-        <div class="modal-header">
-          <h3 id="modalProveedorTitulo"><i class="fas fa-building"></i> Nuevo Proveedor</h3>
-          <button class="modal-close" onclick="cerrarModal('modalProveedor')"><i class="fas fa-times"></i></button>
-        </div>
+        <div class="modal-header"><h3 id="modalProveedorTitulo"><i class="fas fa-building"></i> Nuevo Proveedor</h3><button class="modal-close" onclick="cerrarModal('modalProveedor')"><i class="fas fa-times"></i></button></div>
         <div class="modal-body">
           <input type="hidden" id="pv_id">
           <div class="form-grid">
             <div class="form-group"><label>Nombre Contacto:</label><input type="text" id="pv_nombre" required></div>
             <div class="form-group"><label>Empresa:</label><input type="text" id="pv_empresa"></div>
-            <div class="form-group"><label>Teléfono:</label><input type="text" id="pv_telefono"></div>
+            <div class="form-group"><label>Teléfono:</label><input type="tel" id="pv_telefono"></div>
             <div class="form-group"><label>Correo:</label><input type="email" id="pv_correo"></div>
+            <div class="form-group"><label>Persona de Contacto:</label><input type="text" id="pv_contacto"></div>
             <div class="form-group full-width"><label>Dirección:</label><input type="text" id="pv_direccion"></div>
+            <div class="form-group full-width"><label>Observaciones:</label><input type="text" id="pv_observaciones"></div>
           </div>
         </div>
         <div class="modal-footer">
@@ -538,184 +524,141 @@
 
     <!-- ── GASTOS ── -->
     <section id="gastos" class="content-section">
-      <h2><i class="fas fa-money-bill-wave"></i> Registro de Gastos</h2>
+      <h2><i class="fas fa-money-bill-wave"></i> Gastos</h2>
       <form id="gastoForm" class="form-grid single-col">
-        <div class="form-group">
-          <label>Descripción:</label>
-          <input type="text" id="g_descripcion" required placeholder="Ej: Internet, Electricidad, Alquiler...">
+        <div class="form-group"><label>Descripción:</label><input type="text" id="g_descripcion" required placeholder="Ej: Internet, Electricidad..."></div>
+        <div class="form-group"><label>Monto ($):</label><input type="number" id="g_monto" required min="0.01" step="0.01"></div>
+        <div class="form-group"><label>Categoría:</label>
+          <select id="g_categoria"><option>Servicios</option><option>Salarios</option><option>Alquiler</option><option>Transporte</option><option>Marketing</option><option>Otros</option></select>
         </div>
-        <div class="form-group">
-          <label>Monto ($):</label>
-          <input type="number" id="g_monto" required min="0.01" step="0.01">
-        </div>
-        <div class="form-group">
-          <label>Categoría:</label>
-          <select id="g_categoria">
-            <option>Servicios</option><option>Salarios</option><option>Alquiler</option>
-            <option>Transporte</option><option>Marketing</option><option>Otros</option>
-          </select>
-        </div>
-        <button type="submit" class="btn primary-btn">
-          <i class="fas fa-plus"></i> Registrar Gasto
-        </button>
+        <button type="submit" class="btn primary-btn"><i class="fas fa-plus"></i> Registrar Gasto</button>
       </form>
       <div id="statusGasto" class="status-message hidden"></div>
       <div class="button-group mt-6">
-        <button onclick="cargarGastos()" class="btn secondary-btn">
-          <i class="fas fa-sync"></i> Ver Gastos
-        </button>
-        <button onclick="exportarCSV('gastos')" class="btn secondary-btn">
-          <i class="fas fa-file-csv"></i> CSV
-        </button>
+        <button onclick="cargarGastos()" class="btn secondary-btn"><i class="fas fa-sync"></i> Ver Gastos</button>
+        <button onclick="exportarCSV('gastos')" class="btn secondary-btn"><i class="fas fa-file-csv"></i> CSV</button>
       </div>
       <div class="data-table-container">
         <table class="data-table">
-          <thead><tr><th>ID</th><th>Descripción</th><th>Monto</th><th>Fecha</th><th>Categoría</th><th>Usuario</th><th>Acciones</th></tr></thead>
-          <tbody id="gastosTableBody"><tr><td colspan="7">Presiona "Ver Gastos".</td></tr></tbody>
+          <thead><tr><th>Descripción</th><th>Monto</th><th>Categoría</th><th>Fecha</th><th>Usuario</th><th>Acción</th></tr></thead>
+          <tbody id="gastosTableBody"><tr><td colspan="6">Presiona "Ver Gastos".</td></tr></tbody>
         </table>
       </div>
     </section>
 
     <!-- ── CORTE DE CAJA ── -->
     <section id="caja" class="content-section">
-      <h2><i class="fas fa-lock"></i> Corte de Caja (Día Actual)</h2>
-      <div class="button-group">
-        <button onclick="loadCaja()" class="btn secondary-btn">
-          <i class="fas fa-sync"></i> Actualizar
-        </button>
-      </div>
+      <h2><i class="fas fa-lock"></i> Corte de Caja</h2>
+      <div class="button-group"><button onclick="loadCaja()" class="btn secondary-btn"><i class="fas fa-sync"></i> Actualizar</button></div>
       <div class="stats-grid mt-4">
-        <div class="stat-card" style="border-left:4px solid var(--success-color);">
-          <div class="stat-label">Ventas Hoy</div>
-          <div class="stat-value" id="caja_ventas">$0.00</div>
-        </div>
-        <div class="stat-card" style="border-left:4px solid var(--danger-color);">
-          <div class="stat-label">Gastos Hoy</div>
-          <div class="stat-value" id="caja_gastos">$0.00</div>
-        </div>
-        <div class="stat-card" style="border-left:4px solid var(--primary-color);">
-          <div class="stat-label">Efectivo Esperado</div>
-          <div class="stat-value" id="caja_neto">$0.00</div>
-        </div>
+        <div class="stat-card" style="border-left:4px solid var(--success-color)"><div class="stat-label">Ventas Hoy</div><div class="stat-value" id="caja_ventas">$0.00</div></div>
+        <div class="stat-card" style="border-left:4px solid var(--danger-color)"><div class="stat-label">Gastos Hoy</div><div class="stat-value" id="caja_gastos">$0.00</div></div>
+        <div class="stat-card" style="border-left:4px solid var(--primary-color)"><div class="stat-label">Efectivo Esperado</div><div class="stat-value" id="caja_neto">$0.00</div></div>
       </div>
-      <button id="btn_cerrarCaja" class="btn primary-btn full-width mt-4" style="height:50px; font-size:1.1rem;">
+      <div class="form-grid single-col mt-4">
+        <div class="form-group"><label>Efectivo inicial en caja ($):</label><input type="number" id="caja_efectivo_inicial" value="0" min="0" step="0.01"></div>
+        <div class="form-group"><label>Efectivo contado físicamente ($):</label><input type="number" id="caja_efectivo_contado" min="0" step="0.01"></div>
+        <div class="form-group"><label>Notas del cierre:</label><input type="text" id="caja_notas"></div>
+      </div>
+      <button id="btn_cerrarCaja" class="btn primary-btn full-width mt-4" style="height:50px;font-size:1rem;max-width:100%">
         <i class="fas fa-cash-register"></i> Ejecutar Cierre de Caja
       </button>
       <div id="statusCaja" class="status-message hidden mt-4"></div>
       <h3 class="mt-6 mb-2">Historial de Cortes</h3>
       <div class="data-table-container">
         <table class="data-table">
-          <thead><tr><th>Fecha</th><th>Usuario</th><th>Ventas</th><th>Gastos</th><th>Neto</th></tr></thead>
-          <tbody id="historialCajaBody"><tr><td colspan="5">Presiona "Actualizar".</td></tr></tbody>
+          <thead><tr><th>Fecha</th><th>Usuario</th><th>Ventas</th><th>Gastos</th><th>E.Inicial</th><th>Neto</th><th>Diferencia</th></tr></thead>
+          <tbody id="historialCajaBody"><tr><td colspan="7">Presiona "Actualizar".</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── REPORTES POR FECHA ── -->
+    <section id="reportes" class="content-section">
+      <h2><i class="fas fa-chart-bar"></i> Reportes por Período</h2>
+      <div class="filtro-fecha-bar">
+        <button class="btn-periodo" onclick="setPeriodo('hoy')">Hoy</button>
+        <button class="btn-periodo" onclick="setPeriodo('ayer')">Ayer</button>
+        <button class="btn-periodo" onclick="setPeriodo('semana')">Esta Semana</button>
+        <button class="btn-periodo" onclick="setPeriodo('mes')">Este Mes</button>
+        <button class="btn-periodo" onclick="setPeriodo('anio')">Este Año</button>
+        <button class="btn-periodo" onclick="setPeriodo('personalizado')">Personalizado</button>
+      </div>
+      <div id="rango_personalizado" class="form-grid single-col hidden" style="max-width:460px">
+        <div class="form-group"><label>Desde:</label><input type="date" id="r_fecha_ini"></div>
+        <div class="form-group"><label>Hasta:</label><input type="date" id="r_fecha_fin"></div>
+      </div>
+      <div class="button-group mt-2">
+        <button onclick="cargarReporte('ventas')"   class="btn secondary-btn"><i class="fas fa-shopping-cart"></i> Ventas</button>
+        <button onclick="cargarReporte('compras')"  class="btn secondary-btn"><i class="fas fa-truck-loading"></i> Compras</button>
+        <button onclick="cargarReporte('gastos')"   class="btn secondary-btn"><i class="fas fa-dollar-sign"></i> Gastos</button>
+        <button onclick="cargarReporte('ganancias')" class="btn secondary-btn"><i class="fas fa-chart-line"></i> Ganancias</button>
+        <button onclick="exportarCSV('reporte')" class="btn primary-btn" style="margin-left:auto"><i class="fas fa-file-csv"></i> Exportar CSV</button>
+      </div>
+      <div id="statusReporte" class="status-message hidden mt-3"></div>
+      <div id="reporte_resumen_cards" class="reporte-resumen-cards mt-4 hidden"></div>
+      <div class="data-table-container mt-3">
+        <table class="data-table hidden" id="reporteTable">
+          <thead id="reporteTableHead"></thead>
+          <tbody id="reporteTableBody"></tbody>
         </table>
       </div>
     </section>
 
     <!-- ── PAPELERA ── -->
     <section id="papelera" class="content-section">
-      <h2><i class="fas fa-trash-restore"></i> Papelera de Reciclaje</h2>
-      <div class="button-group">
-        <button onclick="cargarPapelera()" class="btn secondary-btn">
-          <i class="fas fa-sync"></i> Cargar Papelera
-        </button>
-      </div>
+      <h2><i class="fas fa-trash-restore"></i> Papelera</h2>
+      <div class="button-group"><button onclick="cargarPapelera()" class="btn secondary-btn"><i class="fas fa-sync"></i> Cargar</button></div>
       <div id="statusPapelera" class="status-message hidden"></div>
       <div class="data-table-container">
         <table class="data-table">
-          <thead><tr><th>ID</th><th>Tipo</th><th>Datos</th><th>Fecha Eliminado</th><th>Por</th><th>Acción</th></tr></thead>
-          <tbody id="papeleraTableBody"><tr><td colspan="6">Presiona "Cargar Papelera".</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- ── RESÚMENES ── -->
-    <section id="resumenes" class="content-section">
-      <h2><i class="fas fa-list-alt"></i> Resúmenes y Reportes</h2>
-      <div class="button-group">
-        <button onclick="loadSummary('Ventas')" class="btn secondary-btn">
-          <i class="fas fa-chart-bar"></i> Ventas
-        </button>
-        <button onclick="loadSummary('Compras')" class="btn secondary-btn">
-          <i class="fas fa-chart-bar"></i> Compras
-        </button>
-        <button onclick="loadSummary('Gastos')" class="btn secondary-btn">
-          <i class="fas fa-file-invoice-dollar"></i> Gastos
-        </button>
-        <button onclick="loadSummary('Actividad')" class="btn secondary-btn">
-          <i class="fas fa-user-secret"></i> Logs Auditoría
-        </button>
-        <button onclick="exportarCSV('resumen')" class="btn primary-btn" style="margin-left:auto;">
-          <i class="fas fa-file-csv"></i> Exportar CSV
-        </button>
-      </div>
-      <div id="statusResumen" class="status-message hidden"></div>
-      <div class="data-table-container">
-        <table class="data-table hidden" id="resumenTable">
-          <thead id="resumenTableHead"></thead>
-          <tbody id="resumenTableBody"></tbody>
+          <thead><tr><th>Tipo</th><th>Datos</th><th>Eliminado</th><th>Por</th><th>Acción</th></tr></thead>
+          <tbody id="papeleraTableBody"><tr><td colspan="5">Presiona "Cargar".</td></tr></tbody>
         </table>
       </div>
     </section>
 
     <!-- ── ACTIVIDAD ── -->
     <section id="actividad" class="content-section">
-      <h2><i class="fas fa-history"></i> Historial de Actividad</h2>
+      <h2><i class="fas fa-history"></i> Actividad</h2>
       <div class="button-group">
-        <button onclick="cargarActividad()" class="btn secondary-btn">
-          <i class="fas fa-sync"></i> Cargar Actividad
-        </button>
-        <button onclick="exportarCSV('actividad')" class="btn secondary-btn">
-          <i class="fas fa-file-csv"></i> CSV
-        </button>
+        <button onclick="cargarActividad()" class="btn secondary-btn"><i class="fas fa-sync"></i> Cargar</button>
+        <button onclick="exportarCSV('actividad')" class="btn secondary-btn"><i class="fas fa-file-csv"></i> CSV</button>
       </div>
       <div id="statusActividad" class="status-message hidden"></div>
       <div class="data-table-container">
         <table class="data-table">
           <thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Detalle</th></tr></thead>
-          <tbody id="actividadTableBody"><tr><td colspan="4">Presiona "Cargar Actividad".</td></tr></tbody>
+          <tbody id="actividadTableBody"><tr><td colspan="4">Presiona "Cargar".</td></tr></tbody>
         </table>
       </div>
     </section>
 
     <!-- ── USUARIOS ── -->
     <section id="usuarios" class="content-section">
-      <h2><i class="fas fa-user-cog"></i> Gestión de Usuarios</h2>
+      <h2><i class="fas fa-user-cog"></i> Usuarios</h2>
       <div class="button-group">
-        <button onclick="abrirModalNuevoUsuario()" class="btn primary-btn">
-          <i class="fas fa-user-plus"></i> Nuevo Usuario
-        </button>
-        <button onclick="cargarUsuarios()" class="btn secondary-btn">
-          <i class="fas fa-sync"></i> Refrescar
-        </button>
+        <button onclick="abrirModalNuevoUsuario()" class="btn primary-btn"><i class="fas fa-user-plus"></i> Nuevo Usuario</button>
+        <button onclick="cargarUsuarios()" class="btn secondary-btn"><i class="fas fa-sync"></i> Refrescar</button>
       </div>
       <div id="statusUsuario" class="status-message hidden"></div>
       <div class="data-table-container">
         <table class="data-table">
-          <thead><tr><th>ID</th><th>Usuario</th><th>Rol</th><th>Activo</th><th>Último Acceso</th><th>Acciones</th></tr></thead>
-          <tbody id="usuariosTableBody"><tr><td colspan="6">Presiona "Refrescar".</td></tr></tbody>
+          <thead><tr><th>Usuario</th><th>Rol</th><th>Activo</th><th>Último Acceso</th><th>Acciones</th></tr></thead>
+          <tbody id="usuariosTableBody"><tr><td colspan="5">Presiona "Refrescar".</td></tr></tbody>
         </table>
       </div>
     </section>
-
-    <!-- Modal Usuarios -->
     <div id="modalUsuario" class="modal hidden">
       <div class="modal-content">
-        <div class="modal-header">
-          <h3 id="modalUsuarioTitulo"><i class="fas fa-user-plus"></i> Nuevo Usuario</h3>
-          <button class="modal-close" onclick="cerrarModal('modalUsuario')"><i class="fas fa-times"></i></button>
-        </div>
+        <div class="modal-header"><h3 id="modalUsuarioTitulo"><i class="fas fa-user-plus"></i> Nuevo Usuario</h3><button class="modal-close" onclick="cerrarModal('modalUsuario')"><i class="fas fa-times"></i></button></div>
         <div class="modal-body">
           <input type="hidden" id="u_id">
           <div class="form-grid">
             <div class="form-group"><label>Usuario:</label><input type="text" id="u_usuario" required></div>
             <div class="form-group"><label>Contraseña / PIN:</label><input type="password" id="u_password" required></div>
-            <div class="form-group">
-              <label>Rol:</label>
-              <select id="u_rol">
-                <option value="admin">Administrador</option>
-                <option value="empleado" selected>Empleado</option>
-                <option value="lectura">Solo Lectura</option>
-              </select>
+            <div class="form-group"><label>Rol:</label>
+              <select id="u_rol"><option value="admin">Administrador</option><option value="empleado" selected>Empleado</option><option value="lectura">Solo Lectura</option></select>
             </div>
           </div>
         </div>
@@ -726,11 +669,42 @@
       </div>
     </div>
 
+    <!-- ── MI EMPRESA ── -->
+    <section id="empresa" class="content-section">
+      <h2><i class="fas fa-store"></i> Mi Empresa</h2>
+      <div class="empresa-preview" id="empresaPreview">
+        <div class="empresa-logo-prev-placeholder" id="empresaLogoPrev"><i class="fas fa-store"></i></div>
+        <div>
+          <h3 id="empresaPreviewNombre" style="margin:0;font-size:1.25rem">Mi Negocio</h3>
+          <p id="empresaPreviewSlogan" style="color:var(--text-muted);margin-top:.25rem">—</p>
+        </div>
+      </div>
+      <form id="empresaForm" class="form-grid">
+        <div class="form-group"><label>Nombre del Negocio:</label><input type="text" id="e_nombre" required placeholder="Mi Negocio"></div>
+        <div class="form-group"><label>Slogan / Descripción:</label><input type="text" id="e_slogan"></div>
+        <div class="form-group"><label>NIT:</label><input type="text" id="e_nit"></div>
+        <div class="form-group"><label>NRC:</label><input type="text" id="e_nrc"></div>
+        <div class="form-group"><label>IVA (%):</label><input type="number" id="e_iva_pct" value="13" min="0" max="100" step="0.01"></div>
+        <div class="form-group"><label>Moneda (símbolo):</label><input type="text" id="e_moneda" value="$" maxlength="5"></div>
+        <div class="form-group"><label>Teléfono:</label><input type="tel" id="e_telefono"></div>
+        <div class="form-group"><label>Correo:</label><input type="email" id="e_correo"></div>
+        <div class="form-group full-width"><label>Dirección:</label><input type="text" id="e_direccion"></div>
+        <div class="form-group full-width"><label>Logo — URL de imagen (logo.png funciona si está en la misma carpeta):</label><input type="text" id="e_logo_url" placeholder="logo.png" oninput="previewLogo(this.value)"></div>
+        <div class="form-group full-width"><label>Redes sociales (aparecen en ticket):</label><input type="text" id="e_redes" placeholder="@mi_negocio | facebook.com/minegocio"></div>
+        <div class="form-group full-width"><label>Mensaje final del ticket:</label><input type="text" id="e_mensaje_ticket" placeholder="¡Gracias por su compra!"></div>
+        <div class="form-group"><label>Ancho del ticket:</label>
+          <select id="e_ticket_ancho"><option value="80mm">80mm (estándar)</option><option value="58mm">58mm (compacto)</option></select>
+        </div>
+        <div class="full-width">
+          <button type="submit" class="btn primary-btn"><i class="fas fa-save"></i> Guardar Configuración</button>
+        </div>
+      </form>
+      <div id="statusEmpresa" class="status-message hidden mt-4"></div>
+    </section>
+
     <!-- ── CONFIGURACIÓN ── -->
     <section id="configuracion" class="content-section">
       <h2><i class="fas fa-cog"></i> Configuración</h2>
-
-      <!-- Modo oscuro -->
       <div class="card mb-6">
         <h3><i class="fas fa-moon"></i> Apariencia</h3>
         <div style="display:flex;align-items:center;gap:1rem;margin-top:1rem">
@@ -741,40 +715,201 @@
           </label>
         </div>
       </div>
-
-      <!-- Backup -->
       <div class="card mb-6">
         <h3><i class="fas fa-database"></i> Copias de Seguridad</h3>
         <div class="button-group mt-4">
-          <button onclick="crearBackup()" class="btn secondary-btn">
-            <i class="fas fa-download"></i> Crear Backup Completo (JSON)
-          </button>
+          <button onclick="crearBackup()" class="btn secondary-btn"><i class="fas fa-download"></i> Descargar Backup JSON</button>
         </div>
       </div>
-
-      <!-- DB -->
-      <div class="card" style="border:1px solid var(--danger-color); background:var(--danger-light);">
-        <h3 style="color:var(--danger-color)"><i class="fas fa-server"></i> Zona de Peligro - Base de Datos</h3>
-        <p class="mt-3 mb-3">Esta acción creará/verificará las pestañas en Google Sheets.</p>
+      <div class="card" style="border:1px solid var(--danger-color)">
+        <h3 style="color:var(--danger-color)"><i class="fas fa-server"></i> Base de Datos</h3>
+        <p class="mt-3 mb-3">Inicializa o verifica las pestañas en Google Sheets.</p>
         <div class="button-group">
-          <button id="iniciarDBBtn" class="btn primary-btn">
-            <i class="fas fa-play-circle"></i> Iniciar / Verificar Base de Datos
-          </button>
-          <button id="resetDBBtn" class="btn danger-btn">
-            <i class="fas fa-skull"></i> Resetear Todo
-          </button>
+          <button id="iniciarDBBtn" class="btn primary-btn"><i class="fas fa-play-circle"></i> Iniciar / Verificar BD</button>
+          <button id="resetDBBtn" class="btn danger-btn"><i class="fas fa-skull"></i> Resetear Todo</button>
         </div>
       </div>
       <div id="statusConfig" class="status-message hidden mt-4"></div>
     </section>
 
-  </main><!-- /main-content -->
-</div><!-- /mainApp -->
+
+    <!-- ── COMBOS ── -->
+    <section id="combos" class="content-section">
+      <h2><i class="fas fa-layer-group"></i> Combos y Productos Compuestos</h2>
+      <div class="button-group">
+        <button onclick="abrirModalNuevoCombo()" class="btn primary-btn"><i class="fas fa-plus"></i> Nuevo Combo</button>
+        <button onclick="cargarCombos()" class="btn secondary-btn"><i class="fas fa-sync"></i> Refrescar</button>
+      </div>
+      <div id="statusCombo" class="status-message hidden"></div>
+      <div id="combosGrid" class="combos-grid"><p class="text-muted">Cargando...</p></div>
+    </section>
+
+    <!-- Modal Combo -->
+    <div id="modalCombo" class="modal hidden">
+      <div class="modal-content" style="max-width:620px">
+        <div class="modal-header"><h3 id="modalComboTitulo"><i class="fas fa-layer-group"></i> Nuevo Combo</h3><button class="modal-close" onclick="cerrarModal('modalCombo')"><i class="fas fa-times"></i></button></div>
+        <div class="modal-body">
+          <input type="hidden" id="combo_id">
+          <div class="form-grid">
+            <div class="form-group"><label>Nombre:</label><input type="text" id="combo_nombre" required></div>
+            <div class="form-group"><label>Precio ($):</label><input type="number" id="combo_precio" step="0.01" required></div>
+            <div class="form-group full-width"><label>Descripción:</label><input type="text" id="combo_descripcion"></div>
+            <div class="form-group full-width"><label>URL Imagen:</label><input type="url" id="combo_imagen" placeholder="https://..."></div>
+          </div>
+          <hr style="margin:1rem 0;border-color:var(--border-color)">
+          <h4 style="margin-bottom:.75rem"><i class="fas fa-boxes"></i> Componentes</h4>
+          <div id="combo_componentes_list"></div>
+          <div class="form-grid" style="margin-top:.5rem;align-items:end">
+            <div class="form-group" style="position:relative">
+              <label>Agregar producto:</label>
+              <input type="text" id="combo_prod_query" placeholder="Buscar..." oninput="buscarProductoDebounce(this.value,'combo')">
+              <div id="combo_sugerencias" class="sugerencias-dropdown hidden"></div>
+              <input type="hidden" id="combo_prod_id">
+              <input type="hidden" id="combo_prod_nombre_sel">
+            </div>
+            <div class="form-group"><label>Cantidad:</label><input type="number" id="combo_comp_qty" value="1" min="1"></div>
+            <button type="button" onclick="agregarComponenteCombo()" class="btn secondary-btn" style="height:44px"><i class="fas fa-plus"></i></button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn secondary-btn" onclick="cerrarModal('modalCombo')">Cancelar</button>
+          <button class="btn primary-btn" onclick="guardarCombo()"><i class="fas fa-save"></i> Guardar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Ficha Producto -->
+    <div id="modalFichaProducto" class="modal hidden">
+      <div class="modal-content" style="max-width:600px">
+        <div class="modal-header"><h3><i class="fas fa-chart-bar"></i> Estadísticas del Producto</h3><button class="modal-close" onclick="cerrarModal('modalFichaProducto')"><i class="fas fa-times"></i></button></div>
+        <div class="modal-body" id="fichaProductoBody"><div class="text-muted text-center">Cargando...</div></div>
+      </div>
+    </div>
+
+    <!-- ── IMPORTADOR ── -->
+    <section id="importador" class="content-section">
+      <h2><i class="fas fa-file-import"></i> Importar Datos Masivos</h2>
+      <div class="form-grid single-col" style="max-width:400px">
+        <div class="form-group"><label>¿Qué importar?</label>
+          <select id="imp_tipo"><option value="productos">Productos</option><option value="clientes">Clientes</option><option value="proveedores">Proveedores</option></select>
+        </div>
+      </div>
+      <div class="importador-zone" id="importadorZone" onclick="document.getElementById('imp_file').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleFileDrop(event)">
+        <i class="fas fa-cloud-upload-alt"></i>
+        <p style="font-size:1.1rem;font-weight:600;color:var(--text-main)">Arrastra tu archivo aquí o haz clic</p>
+        <p style="color:var(--text-muted);margin-top:.5rem">Soporta: CSV (.csv) y JSON (.json)</p>
+        <input type="file" id="imp_file" accept=".csv,.json" style="display:none" onchange="handleFileSelect(event)">
+      </div>
+      <div id="imp_preview" class="importador-preview hidden">
+        <div style="padding:1rem;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center">
+          <span id="imp_preview_info" style="font-weight:600"></span>
+          <button onclick="ejecutarImportacion()" class="btn primary-btn" style="height:36px"><i class="fas fa-upload"></i> Importar Ahora</button>
+        </div>
+        <div class="data-table-container" style="max-height:280px;overflow-y:auto;margin:0">
+          <table class="data-table"><thead id="imp_thead"></thead><tbody id="imp_tbody"></tbody></table>
+        </div>
+      </div>
+      <div id="imp_resultado" class="importador-resultado hidden"></div>
+      <div id="statusImportador" class="status-message hidden mt-4"></div>
+    </section>
+
+    <!-- ── FACTURAS ── -->
+    <section id="facturas" class="content-section">
+      <h2><i class="fas fa-file-invoice"></i> Facturas</h2>
+      <div class="button-group">
+        <button onclick="cargarFacturas()" class="btn secondary-btn"><i class="fas fa-sync"></i> Cargar</button>
+        <button onclick="exportarCSV('facturas')" class="btn secondary-btn"><i class="fas fa-file-csv"></i> CSV</button>
+      </div>
+      <div id="statusFacturas" class="status-message hidden"></div>
+      <div class="data-table-container">
+        <table class="data-table">
+          <thead><tr><th>#</th><th>Venta ID</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody id="facturasTableBody"><tr><td colspan="7">Presiona "Cargar".</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+    <div id="facturaPrintZone" style="display:none"><div class="factura-a4" id="facturaContenido"></div></div>
+
+    <!-- ── SOPORTE ── -->
+    <section id="soporte" class="content-section">
+      <h2><i class="fas fa-headset"></i> Soporte Técnico</h2>
+      <div class="button-group">
+        <button onclick="abrirModalTicket()" class="btn primary-btn"><i class="fas fa-plus"></i> Nuevo Ticket</button>
+        <button onclick="cargarTicketsSoporte()" class="btn secondary-btn"><i class="fas fa-sync"></i> Refrescar</button>
+      </div>
+      <div class="filtro-fecha-bar mb-4">
+        <button class="btn-periodo activo" onclick="filtrarTickets('todos')">Todos</button>
+        <button class="btn-periodo" onclick="filtrarTickets('nuevo')">Nuevos</button>
+        <button class="btn-periodo" onclick="filtrarTickets('respondido')">Respondidos</button>
+        <button class="btn-periodo" onclick="filtrarTickets('cerrado')">Cerrados</button>
+      </div>
+      <div id="statusSoporte" class="status-message hidden"></div>
+      <div id="ticketsSoporteList"><p class="text-muted">Presiona "Refrescar".</p></div>
+    </section>
+
+    <!-- Modal Ticket -->
+    <div id="modalTicketSoporte" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header"><h3><i class="fas fa-ticket-alt"></i> Nuevo Ticket</h3><button class="modal-close" onclick="cerrarModal('modalTicketSoporte')"><i class="fas fa-times"></i></button></div>
+        <div class="modal-body">
+          <div class="form-grid single-col">
+            <div class="form-group"><label>Título:</label><input type="text" id="tk_titulo" required></div>
+            <div class="form-group"><label>Descripción:</label><textarea id="tk_descripcion" rows="5" style="width:100%;padding:.75rem;border:1px solid var(--border-color);border-radius:var(--radius);background:var(--bg-card);color:var(--text-main);resize:vertical"></textarea></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn secondary-btn" onclick="cerrarModal('modalTicketSoporte')">Cancelar</button>
+          <button class="btn primary-btn" onclick="enviarTicketSoporte()"><i class="fas fa-paper-plane"></i> Enviar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Responder -->
+    <div id="modalResponderTicket" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header"><h3><i class="fas fa-reply"></i> Responder Ticket</h3><button class="modal-close" onclick="cerrarModal('modalResponderTicket')"><i class="fas fa-times"></i></button></div>
+        <div class="modal-body">
+          <input type="hidden" id="resp_ticket_id">
+          <div id="resp_ticket_detalle" style="margin-bottom:1rem;padding:1rem;background:var(--gray-50);border-radius:var(--radius);color:var(--text-main)"></div>
+          <div class="form-group"><label>Cambiar Estado:</label>
+            <select id="resp_estado"><option value="revision">En Revisión</option><option value="respondido">Respondido</option><option value="cerrado">Cerrado</option></select>
+          </div>
+          <div class="form-group"><label>Respuesta:</label>
+            <textarea id="resp_texto" rows="4" style="width:100%;padding:.75rem;border:1px solid var(--border-color);border-radius:var(--radius);background:var(--bg-card);color:var(--text-main);resize:vertical"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn secondary-btn" onclick="cerrarModal('modalResponderTicket')">Cancelar</button>
+          <button class="btn primary-btn" onclick="enviarRespuestaTicket()"><i class="fas fa-paper-plane"></i> Responder</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal PIN -->
+    <div id="modalPIN" class="modal hidden">
+      <div class="modal-content" style="max-width:320px;text-align:center">
+        <div class="modal-header"><h3><i class="fas fa-shield-alt"></i> Verificación de Seguridad</h3><button class="modal-close" onclick="cerrarModal('modalPIN')"><i class="fas fa-times"></i></button></div>
+        <div class="modal-body">
+          <p id="pinMotivo" style="color:var(--text-muted);margin-bottom:1rem">Ingresa tu PIN para continuar</p>
+          <div class="pin-display" id="pinDisplay">——</div>
+          <div class="pin-pad">
+            <button class="pin-btn" onclick="pinInput('1')">1</button><button class="pin-btn" onclick="pinInput('2')">2</button><button class="pin-btn" onclick="pinInput('3')">3</button>
+            <button class="pin-btn" onclick="pinInput('4')">4</button><button class="pin-btn" onclick="pinInput('5')">5</button><button class="pin-btn" onclick="pinInput('6')">6</button>
+            <button class="pin-btn" onclick="pinInput('7')">7</button><button class="pin-btn" onclick="pinInput('8')">8</button><button class="pin-btn" onclick="pinInput('9')">9</button>
+            <button class="pin-btn" onclick="pinBorrar()"><i class="fas fa-backspace"></i></button>
+            <button class="pin-btn" onclick="pinInput('0')">0</button>
+            <button class="pin-btn" onclick="pinConfirmar()" style="background:var(--success-color);color:white"><i class="fas fa-check"></i></button>
+          </div>
+          <div id="pinError" class="status-message error hidden mt-3"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
 
 <!-- Botón menú móvil -->
-<button class="mobile-toggle hidden no-print" id="mobileToggle">
-  <i class="fas fa-bars"></i>
-</button>
+<button class="mobile-toggle hidden no-print" id="mobileToggle"><i class="fas fa-bars"></i></button>
 
 <script src="script.js"></script>
 </body>
