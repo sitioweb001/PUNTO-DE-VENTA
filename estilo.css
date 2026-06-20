@@ -626,13 +626,18 @@ input:checked + .toggle-slider::before { transform:translateX(22px); }
 .mobile-toggle:hover { background:#0a52c4; }
 
 /* ═══════════════════════════════════════════════════════════════
-   RESPONSIVE
+   RESPONSIVE — OPTIMIZADO PARA CUALQUIER PANTALLA
 ════════════════════════════════════════════════════════════════ */
+
+/* Pantallas grandes / laptops */
 @media (max-width:1200px) {
   .sidebar { width:240px; }
   .main-content { margin-left:240px; padding:1.5rem; }
+  .stats-grid { grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); }
+  .carrito-container { grid-template-columns: 1fr 300px; }
 }
 
+/* Tablets horizontales / pantallas medianas */
 @media (max-width:992px) {
   .sidebar {
     transform:translateX(-100%); width:280px;
@@ -640,27 +645,77 @@ input:checked + .toggle-slider::before { transform:translateX(22px); }
   }
   .sidebar.active { transform:translateX(0); }
   .main-content { margin-left:0; padding:1.25rem; padding-top:4.5rem; }
+  .carrito-container { grid-template-columns: 1fr; }
+  .carrito-panel { position:static; }
+  .dashboard-v3-extra { grid-template-columns:repeat(2,1fr); }
+  .chart-row { grid-template-columns:1fr; }
+  .notif-panel { width:300px; right:1rem; }
+  .combos-grid { grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); }
 }
 
+/* Tablets verticales */
 @media (max-width:768px) {
-  .stats-grid { grid-template-columns:repeat(2,1fr); gap:1rem; }
+  .stats-grid { grid-template-columns:repeat(2,1fr); gap:.75rem; }
   .form-grid  { grid-template-columns:1fr; }
   .dashboard-extra { grid-template-columns:1fr; }
-  .chart-container { height:280px; padding:1rem; }
+  .dashboard-v3-extra { grid-template-columns:repeat(2,1fr); gap:.75rem; }
+  .chart-container { height:240px; padding:.75rem; }
+  .chart-container-sm { height:220px; }
   .search-bar { flex-direction:column; align-items:stretch; }
   .search-input-wrap { min-width:unset; }
-  h2 { font-size:1.25rem; }
-  .main-content { padding:1rem; padding-top:4rem; }
-  .modal-content { max-width:100%; }
+  h2 { font-size:1.15rem; }
+  .main-content { padding:.85rem; padding-top:4rem; }
+  .modal-content { max-width:94%; max-height:88vh; overflow-y:auto; }
+  .filter-panel .form-grid { grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); }
+  .factura-encabezado, .factura-partes { grid-template-columns:1fr; }
+  .empresa-preview { flex-direction:column; text-align:center; }
+  .filtro-fecha-bar { gap:.4rem; }
+  .filtro-fecha-bar .btn-periodo { font-size:.75rem; padding:.3rem .6rem; }
+
+  /* Tablas con scroll horizontal en pantallas chicas */
+  .data-table-container { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .data-table { min-width:560px; }
 }
 
+/* Celulares */
 @media (max-width:640px) {
   .stats-grid { grid-template-columns:1fr; }
+  .dashboard-v3-extra { grid-template-columns:1fr; }
   .button-group { flex-direction:column; align-items:stretch; }
   .button-group .btn { width:100%; max-width:none; }
-  .toast-container { left:.75rem; right:.75rem; max-width:none; }
-  .toast { transform:translateY(-20px); }
+  .toast-container { left:.75rem; right:.75rem; max-width:none; top:.75rem; }
+  .toast { transform:translateY(-20px); min-width:unset; width:100%; }
   .toast.show { transform:translateY(0); }
+  .login-card { padding:1.5rem; margin:0 1rem; max-width:none; }
+  .combos-grid { grid-template-columns:1fr 1fr; gap:.75rem; }
+  .combo-card-img { height:90px; font-size:2rem; }
+  .pin-pad { max-width:220px; gap:.5rem; }
+  .pin-btn { height:48px; font-size:1.1rem; }
+  .notif-panel { width:calc(100vw - 1.5rem); right:.75rem; left:.75rem; }
+  .ficha-producto-header { flex-direction:column; text-align:center; }
+  .stats-producto-grid { grid-template-columns:repeat(2,1fr); }
+  .kpi-card { padding:.75rem 1rem; }
+  .reporte-resumen-cards { grid-template-columns:repeat(2,1fr); }
+  .carrito-item { flex-wrap:wrap; }
+  .carrito-qty { order:3; width:100%; justify-content:center; margin-top:.4rem; }
+}
+
+/* Celulares pequeños */
+@media (max-width:400px) {
+  .stat-value { font-size:1.4rem; }
+  .login-logo h1 { font-size:1.1rem; }
+  .combos-grid { grid-template-columns:1fr; }
+  .stats-producto-grid { grid-template-columns:1fr; }
+  .reporte-resumen-cards { grid-template-columns:1fr; }
+  .data-table { min-width:480px; font-size:.78rem; }
+  .modal-content { padding:0; }
+  .modal-body, .modal-header, .modal-footer { padding:.85rem 1rem; }
+}
+
+/* Pantallas muy grandes (monitores anchos) */
+@media (min-width:1600px) {
+  .main-content { max-width:1600px; margin-left:260px; }
+  .stats-grid { grid-template-columns:repeat(6,1fr); }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -708,27 +763,10 @@ input:checked + .toggle-slider::before { transform:translateX(22px); }
 body.dark-mode .row-alert { background-color:#3c1a1a !important; }
 
 /* ═══════════════════════════════════════════════════════════════
-   TICKET DE IMPRESIÓN
+   TICKET DE IMPRESIÓN — zona oculta en pantalla, visible solo al imprimir
 ════════════════════════════════════════════════════════════════ */
 .print-only { display:none; }
-
-@media print {
-  body * { visibility:hidden; }
-  .no-print { display:none !important; }
-  #ticketPrintZone, #ticketPrintZone * { visibility:visible; }
-  #ticketPrintZone {
-    position:absolute; left:0; top:0; width:300px;
-    font-family:'Courier New', Courier, monospace; font-size:12px; color:black;
-    margin:0; padding:10px; display:block;
-  }
-  .ticket-header { text-align:center; margin-bottom:15px; border-bottom:1px dashed black; padding-bottom:10px; }
-  .ticket-header h2 { font-size:16px; margin:0; color:black; border:none; justify-content:center; padding:0; }
-  .ticket-body { margin-bottom:15px; border-bottom:1px dashed black; padding-bottom:10px; }
-  .ticket-table { width:100%; text-align:left; margin-top:10px; border-collapse:collapse; }
-  .ticket-table th, .ticket-table td { padding:4px 0; border:none; color:black; font-size:12px; }
-  .ticket-total { font-weight:bold; font-size:14px; text-align:right; margin-top:10px; }
-  .ticket-footer { text-align:center; font-size:11px; }
-}
+.print-zone-hidden { display:none; }
 
 /* ═══════════════════════════════════════════════════════════════
    LOGO DINÁMICO (cambia con el tema)
@@ -932,18 +970,22 @@ body.dark-mode .carrito-item:hover { background: #1a2740; }
 body.dark-mode .badge-tipo.regular { background: #334155; color: #94a3b8; }
 
 /* ═══════════════════════════════════════════════════════════════
-   TICKET IMPRESIÓN (Fase 1 mejorado)
+   TICKET IMPRESIÓN (versión completa con logo y totales desglosados)
 ════════════════════════════════════════════════════════════════ */
 @media print {
   body * { visibility: hidden; }
   .no-print { display: none !important; }
+
+  #ticketPrintZone.print-zone-hidden,
+  #facturaPrintZone.print-zone-hidden { display: block !important; }
+
   #ticketPrintZone, #ticketPrintZone * { visibility: visible; }
   #ticketPrintZone {
     position: absolute; left: 0; top: 0;
     width: var(--ticket-width, 80mm);
     font-family: 'Courier New', Courier, monospace;
     font-size: 12px; color: #000;
-    margin: 0; padding: 8px; display: block;
+    margin: 0; padding: 8px; display: block !important;
     background: white !important;
   }
   .ticket-logo { text-align: center; margin-bottom: 8px; }
