@@ -232,6 +232,10 @@
               <label>Notas:</label>
               <input type="text" id="v_notas" placeholder="Opcional">
             </div>
+            <div class="form-group" style="display:flex;align-items:center;gap:.6rem;padding-top:1.6rem">
+              <input type="checkbox" id="v_generar_factura" style="width:18px;height:18px">
+              <label for="v_generar_factura" style="margin:0">🧾 Generar factura</label>
+            </div>
           </div>
           <div id="statusVenta" class="status-message hidden"></div>
         </div>
@@ -816,6 +820,16 @@
     <!-- ── FACTURAS ── -->
     <section id="facturas" class="content-section">
       <h2><i class="fas fa-file-invoice"></i> Facturas</h2>
+      <div class="form-grid" style="max-width:520px;align-items:end">
+        <div class="form-group">
+          <label>Generar factura desde N° de Venta (ID):</label>
+          <input type="text" id="fact_venta_id_manual" placeholder="Pega aquí el ID de la venta">
+        </div>
+        <button onclick="generarFacturaManual()" class="btn primary-btn" style="height:44px"><i class="fas fa-file-invoice"></i> Generar</button>
+      </div>
+      <p class="text-muted" style="font-size:.8rem;margin:.5rem 0 1.25rem">
+        Tip: también puedes marcar "🧾 Generar factura" al momento de cobrar en Punto de Venta.
+      </p>
       <div class="button-group">
         <button onclick="cargarFacturas()" class="btn secondary-btn"><i class="fas fa-sync"></i> Cargar</button>
         <button onclick="exportarCSV('facturas')" class="btn secondary-btn"><i class="fas fa-file-csv"></i> CSV</button>

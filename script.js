@@ -210,12 +210,18 @@ function aplicarPermisos() {
 // ═══════════════════════════════════════════════════════════════
 function setupNavigation() {
   document.querySelectorAll('.sidebar-nav a[data-section]').forEach(link => {
+    // Tooltip legible para modo tablet (sidebar colapsado a íconos)
+    const texto = link.textContent.trim();
+    if (texto) link.setAttribute('data-tooltip', texto);
+
     link.addEventListener('click', e => {
       e.preventDefault();
       const id = link.getAttribute('data-section');
       if (!(PERMISOS[currentUser.rol]||[]).includes(id)) { showToast('Sin permiso.','error'); return; }
       irASeccion(id);
-      if (window.innerWidth <= 992) document.getElementById('sidebar').classList.remove('active');
+      // Solo cierra el sidebar overlay en modo móvil (≤768px); en modo
+      // tablet (769-1100px) el sidebar es fijo y no debe cerrarse.
+      if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('active');
     });
   });
   document.getElementById('logoutBtn').addEventListener('click', e => { e.preventDefault(); cerrarSesion(); });
@@ -252,14 +258,16 @@ function setupMobile() {
   const toggle  = document.getElementById('mobileToggle');
   const sidebar = document.getElementById('sidebar');
   const check   = () => {
-    toggle.classList.toggle('hidden', window.innerWidth > 992);
-    if (window.innerWidth > 992) sidebar.classList.remove('active');
+    // El botón hamburguesa solo es necesario en ≤768px (modo overlay).
+    // Entre 769-1100px el sidebar queda fijo y colapsado a íconos.
+    toggle.classList.toggle('hidden', window.innerWidth > 768);
+    if (window.innerWidth > 768) sidebar.classList.remove('active');
   };
   check();
   window.addEventListener('resize', check);
   toggle.addEventListener('click', e => { e.stopPropagation(); sidebar.classList.toggle('active'); });
   document.addEventListener('click', e => {
-    if (window.innerWidth <= 992 && sidebar.classList.contains('active') && !sidebar.contains(e.target) && !toggle.contains(e.target))
+    if (window.innerWidth <= 768 && sidebar.classList.contains('active') && !sidebar.contains(e.target) && !toggle.contains(e.target))
       sidebar.classList.remove('active');
   });
 }
@@ -841,15 +849,26 @@ async function finalizarVenta() {
 
   try {
     const r = await apiPost(req);
-    showStatus('statusVenta', r.status, r.message);
     if (r.status === 'success') {
+      showStatus('statusVenta', 'success', `${r.message} — ID de venta: ${r.data.ticket_id}`);
       showToast(`Venta registrada. Total: ${configEmpresa.moneda||'$'}${fmt(r.data.total)}`, 'success');
+
+      // Generar factura si el usuario marcó la casilla
+      const generarFact = document.getElementById('v_generar_factura').checked;
+      if (generarFact) {
+        const fr = await generarFacturaDesdeVenta(r.data.ticket_id);
+        if (fr?.status === 'success') showToast(`Factura #${fr.data.numero} generada.`, 'success');
+      }
+
       imprimirTicket(r.data);
       carrito = [];
       renderCarrito();
       document.getElementById('v_descuento').value = 0;
       document.getElementById('v_cliente_nombre').value = '';
       document.getElementById('v_notas').value = '';
+      document.getElementById('v_generar_factura').checked = false;
+    } else {
+      showStatus('statusVenta', r.status, r.message);
     }
   } catch(e) { showStatus('statusVenta','error', e.message); }
   finally {
@@ -2011,9 +2030,20 @@ async function cargarFacturas() {
 
 async function generarFacturaDesdeVenta(ventaId) {
   const r = await apiPost({ action:'generarFactura', venta_id:ventaId, usuario: currentUser.usuario });
-  showToast(r.message, r.status);
   if (r.status==='success') cargarFacturas();
   return r;
+}
+
+async function generarFacturaManual() {
+  const ventaId = document.getElementById('fact_venta_id_manual').value.trim();
+  if (!ventaId) { showStatus('statusFacturas','warning','Ingresa el ID de la venta.'); return; }
+  showStatus('statusFacturas','info','Generando factura...');
+  const r = await generarFacturaDesdeVenta(ventaId);
+  showStatus('statusFacturas', r.status, r.message);
+  if (r.status === 'success') {
+    showToast(`Factura #${r.data.numero} generada.`,'success');
+    document.getElementById('fact_venta_id_manual').value = '';
+  }
 }
 
 async function imprimirFacturaA4(facturaId) {

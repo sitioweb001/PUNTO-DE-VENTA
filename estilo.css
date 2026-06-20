@@ -627,6 +627,8 @@ input:checked + .toggle-slider::before { transform:translateX(22px); }
 
 /* ═══════════════════════════════════════════════════════════════
    RESPONSIVE — OPTIMIZADO PARA CUALQUIER PANTALLA
+   Breakpoints: Desktop XL (1600+) · Desktop (1200) · Laptop pequeño (1100)
+   · Tablet horizontal (992) · Tablet vertical (768) · Móvil (640) · Móvil chico (400)
 ════════════════════════════════════════════════════════════════ */
 
 /* Pantallas grandes / laptops */
@@ -637,40 +639,80 @@ input:checked + .toggle-slider::before { transform:translateX(22px); }
   .carrito-container { grid-template-columns: 1fr 300px; }
 }
 
-/* Tablets horizontales / pantallas medianas */
-@media (max-width:992px) {
+/* ── MODO TABLET: sidebar colapsado a solo íconos (1100px → 769px) ──
+   En vez de saltar directo a menú hamburguesa, las tablets (iPad, Android
+   tablet en horizontal o vertical) usan un sidebar angosto con íconos y
+   tooltips, manteniendo navegación siempre visible sin ocupar espacio. */
+@media (max-width:1100px) and (min-width:769px) {
+  .sidebar { width:72px; padding-top:1.25rem; }
+  .sidebar .logo span,
+  .sidebar .user-name,
+  .sidebar .user-role,
+  .sidebar-nav a span:not(.notif-badge) { display:none; }
+  .logo { justify-content:center; padding:0 .5rem 1rem; }
+  .logo .logo-img { height:30px; }
+  .user-info-sidebar { justify-content:center; padding:.75rem .25rem; }
+  .user-avatar i { font-size:1.6rem; }
+  .sidebar-nav { padding:.5rem; align-items:center; }
+  .sidebar-nav a {
+    justify-content:center; padding:.75rem; width:48px; height:48px;
+    border-radius:var(--radius);
+  }
+  .sidebar-nav a i { width:auto; font-size:1.15rem; }
+  .sidebar-nav a.active::before { display:none; }
+  .sidebar-nav a:hover { position:relative; }
+  /* Tooltip al pasar el cursor */
+  .sidebar-nav a:hover::after {
+    content: attr(data-tooltip);
+    position:absolute; left:60px; top:50%; transform:translateY(-50%);
+    background:var(--primary-dark); color:white;
+    padding:.4rem .75rem; border-radius:var(--radius-sm);
+    font-size:.75rem; white-space:nowrap; z-index:100;
+    box-shadow:var(--shadow-lg); pointer-events:none;
+  }
+  .main-content { margin-left:72px; padding:1.5rem; padding-top:1.5rem; }
+  .mobile-toggle { display:none !important; }
+  .notif-panel { left:80px; right:auto; }
+
+  .stats-grid { grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:.85rem; }
+  .dashboard-extra { grid-template-columns:repeat(2,1fr); }
+  .dashboard-v3-extra { grid-template-columns:repeat(2,1fr); }
+  .carrito-container { grid-template-columns: 1fr 280px; gap:1rem; }
+  .form-grid { grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+  .combos-grid { grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); }
+  .chart-container { height:280px; }
+}
+
+/* Tablet vertical / pantallas medianas-chicas (menú hamburguesa clásico) */
+@media (max-width:768px) {
   .sidebar {
     transform:translateX(-100%); width:280px;
     z-index:1000; box-shadow:var(--shadow-xl);
   }
   .sidebar.active { transform:translateX(0); }
+  .sidebar .logo span, .sidebar .user-name, .sidebar .user-role,
+  .sidebar-nav a span:not(.notif-badge) { display:initial; }
   .main-content { margin-left:0; padding:1.25rem; padding-top:4.5rem; }
   .carrito-container { grid-template-columns: 1fr; }
   .carrito-panel { position:static; }
-  .dashboard-v3-extra { grid-template-columns:repeat(2,1fr); }
-  .chart-row { grid-template-columns:1fr; }
-  .notif-panel { width:300px; right:1rem; }
-  .combos-grid { grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); }
-}
-
-/* Tablets verticales */
-@media (max-width:768px) {
   .stats-grid { grid-template-columns:repeat(2,1fr); gap:.75rem; }
   .form-grid  { grid-template-columns:1fr; }
   .dashboard-extra { grid-template-columns:1fr; }
   .dashboard-v3-extra { grid-template-columns:repeat(2,1fr); gap:.75rem; }
   .chart-container { height:240px; padding:.75rem; }
   .chart-container-sm { height:220px; }
+  .chart-row { grid-template-columns:1fr; }
   .search-bar { flex-direction:column; align-items:stretch; }
   .search-input-wrap { min-width:unset; }
   h2 { font-size:1.15rem; }
-  .main-content { padding:.85rem; padding-top:4rem; }
   .modal-content { max-width:94%; max-height:88vh; overflow-y:auto; }
   .filter-panel .form-grid { grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); }
   .factura-encabezado, .factura-partes { grid-template-columns:1fr; }
   .empresa-preview { flex-direction:column; text-align:center; }
   .filtro-fecha-bar { gap:.4rem; }
   .filtro-fecha-bar .btn-periodo { font-size:.75rem; padding:.3rem .6rem; }
+  .notif-panel { width:300px; right:1rem; left:auto; }
+  .combos-grid { grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); }
 
   /* Tablas con scroll horizontal en pantallas chicas */
   .data-table-container { overflow-x:auto; -webkit-overflow-scrolling:touch; }
@@ -716,6 +758,14 @@ input:checked + .toggle-slider::before { transform:translateX(22px); }
 @media (min-width:1600px) {
   .main-content { max-width:1600px; margin-left:260px; }
   .stats-grid { grid-template-columns:repeat(6,1fr); }
+}
+
+/* Orientación horizontal en tablets (landscape) — más alto que ancho disponible
+   suele ser limitado, así que compactamos el padding vertical */
+@media (max-width:1024px) and (orientation:landscape) and (max-height:768px) {
+  .main-content { padding-top:1rem; padding-bottom:1rem; }
+  .login-screen { padding:1rem 0; }
+  .login-card { margin:1rem auto; }
 }
 
 /* ═══════════════════════════════════════════════════════════════
