@@ -183,6 +183,18 @@ function iniciarApp() {
 
   loadInitialData();
   irASeccion('dashboard');
+
+  // Notificaciones
+  cargarNotificaciones();
+  setInterval(cargarNotificaciones, 300000);
+  document.addEventListener('click', e => {
+    const panel = document.getElementById('notifPanel');
+    if (!panel.classList.contains('hidden') &&
+        !panel.contains(e.target) &&
+        !e.target.closest('.notif-bell')) {
+      panel.classList.add('hidden');
+    }
+  });
 }
 
 function aplicarPermisos() {
@@ -225,6 +237,10 @@ function irASeccion(id) {
     caja:         loadCaja,
     devoluciones: cargarDevoluciones,
     empresa:      cargarFormEmpresa,
+    combos:       cargarCombos,
+    facturas:     cargarFacturas,
+    soporte:      cargarTicketsSoporte,
+    importador:   resetImportador,
   };
   if (acciones[id]) acciones[id]();
 }
@@ -427,33 +443,9 @@ async function cargarDatalistProveedores() {
 
 // ═══════════════════════════════════════════════════════════════
 // DASHBOARD
+// (función completa handleLoadDashboard con KPIs y gráfico de
+//  categoría está definida más abajo, junto al resto de Fase 3)
 // ═══════════════════════════════════════════════════════════════
-async function handleLoadDashboard() {
-  showStatus('statusDashboard','info','Cargando...');
-  try {
-    const r = await apiFetch('getDashboard');
-    if (r.status !== 'success') { showStatus('statusDashboard','error', r.message); return; }
-    const d = r.data;
-    const M = configEmpresa.moneda || '$';
-
-    document.getElementById('totalVentas').textContent    = `${M}${fmt(d.totales.ventas)}`;
-    document.getElementById('totalCompras').textContent   = `${M}${fmt(d.totales.compras)}`;
-    document.getElementById('totalGastos').textContent    = `${M}${fmt(d.totales.gastos)}`;
-    document.getElementById('totalGanancias').textContent = `${M}${fmt(d.totales.ganancias)}`;
-    document.getElementById('ventasHoy').textContent      = `${M}${fmt(d.totales.ventasHoy)}`;
-    document.getElementById('ventasMes').textContent      = `${M}${fmt(d.totales.ventasMes)}`;
-    document.getElementById('totalGanancias').style.color = d.totales.ganancias >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
-
-    renderAlertasStock(d.stockBajo, d.productosAgotados);
-    renderTopVendidos(d.topVendidos);
-    renderTopRentables(d.topRentables);
-    renderStockCritico(d.stockBajo);
-    if (d.grafico?.length) renderCharts(d.grafico);
-
-    showStatus('statusDashboard','success','Dashboard actualizado.');
-    setTimeout(() => document.getElementById('statusDashboard').classList.add('hidden'), 2500);
-  } catch(e) { showStatus('statusDashboard','error', e.message); }
-}
 
 function renderAlertasStock(bajo, agotados) {
   const el = document.getElementById('stockAlerts');
@@ -605,6 +597,7 @@ function filtrarInventario() {
       </td>
     </tr>`;
   }).join('');
+  agregarBotonesEstadisticas();
 }
 
 function abrirEditarProducto(p) {
@@ -726,6 +719,12 @@ function seleccionarProducto(p, prefix) {
     document.getElementById('dev_query').value           = p.nombre;
     document.getElementById('dev_producto_id').value     = p.id;
     document.getElementById('dev_producto_nombre').value = p.nombre;
+  } else if (prefix === 'combo') {
+    document.getElementById('combo_prod_query').value      = p.nombre;
+    document.getElementById('combo_prod_id').value         = p.id;
+    document.getElementById('combo_prod_nombre_sel').value = p.nombre;
+    document.getElementById('combo_sugerencias').classList.add('hidden');
+    document.getElementById('combo_comp_qty').focus();
   }
 }
 
@@ -1365,12 +1364,28 @@ async function cargarFormEmpresa() {
   document.getElementById('e_redes').value           = c.redes||'';
   document.getElementById('e_mensaje_ticket').value  = c.mensaje_ticket||'¡Gracias por su compra!';
   actualizarPreviewEmpresa();
+
+  // Agregar opción de backup automático si no existe ya
+  if (!document.getElementById('btnBackupAuto')) {
+    const empForm = document.getElementById('empresaForm');
+    if (empForm) {
+      const div = document.createElement('div');
+      div.className = 'card mt-6';
+      div.innerHTML = `
+        <h3><i class="fas fa-clock"></i> Backup Automático</h3>
+        <p style="color:var(--text-muted);margin:.75rem 0">Guardar respaldo diario automáticamente en Google Drive a las 11:00 PM.</p>
+        <button id="btnBackupAuto" onclick="configurarBackupAutomatico()" class="btn secondary-btn">
+          <i class="fas fa-calendar-check"></i> Activar Backup Diario Automático
+        </button>`;
+      empForm.after(div);
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ═══════════════════════════════════════════════════════════════
-async function handleConfigAction(action) {
+async function ejecutarConfigAction(action) {
   document.getElementById('iniciarDBBtn').disabled = true;
   document.getElementById('resetDBBtn').disabled   = true;
   showStatus('statusConfig','info',`Procesando...`);
@@ -1523,36 +1538,7 @@ function formatFecha(v) {
 PERMISOS.admin    = [...PERMISOS.admin,    'combos','importador','facturas','soporte'];
 PERMISOS.empleado = [...PERMISOS.empleado, 'combos','soporte'];
 
-// ─── INIT EXTENDIDO ──────────────────────────────────────────
-const _irASeccion_v2 = irASeccion;
-function irASeccion(id) {
-  _irASeccion_v2(id);
-  if (id === 'combos')     cargarCombos();
-  if (id === 'facturas')   cargarFacturas();
-  if (id === 'soporte')    cargarTicketsSoporte();
-  if (id === 'importador') resetImportador();
-}
-
-// Cargar notificaciones al iniciar
-const _iniciarApp_v2 = iniciarApp;
-function iniciarApp() {
-  _iniciarApp_v2();
-  cargarNotificaciones();
-  // Actualizar notificaciones cada 5 min
-  setInterval(cargarNotificaciones, 300000);
-  // Click fuera cierra panel notif
-  document.addEventListener('click', e => {
-    const panel = document.getElementById('notifPanel');
-    if (!panel.classList.contains('hidden') &&
-        !panel.contains(e.target) &&
-        !e.target.closest('.notif-bell')) {
-      panel.classList.add('hidden');
-    }
-  });
-}
-
-// Dashboard V3 (reemplaza v2)
-const _handleLoadDashboard_v2 = handleLoadDashboard;
+// Dashboard V3 (reemplaza la función original handleLoadDashboard)
 async function handleLoadDashboard() {
   showStatus('statusDashboard','info','Cargando...');
   try {
@@ -1859,19 +1845,7 @@ async function verFichaCombo(id) {
   abrirModal('modalFichaProducto');
 }
 
-// Seleccionar producto en modal combo
-const _seleccionarProducto_v2 = seleccionarProducto;
-function seleccionarProducto(p, prefix) {
-  if (prefix === 'combo') {
-    document.getElementById('combo_prod_query').value        = p.nombre;
-    document.getElementById('combo_prod_id').value           = p.id;
-    document.getElementById('combo_prod_nombre_sel').value   = p.nombre;
-    document.getElementById('combo_sugerencias').classList.add('hidden');
-    document.getElementById('combo_comp_qty').focus();
-  } else {
-    _seleccionarProducto_v2(p, prefix);
-  }
-}
+// (función seleccionarProducto fusionada arriba, con soporte para combos)
 
 // ─── FICHA ESTADÍSTICAS PRODUCTO ──────────────────────────────
 async function verFichaProducto(productoId) {
@@ -1900,25 +1874,20 @@ async function verFichaProducto(productoId) {
     </div>`;
 }
 
-// Agregar botón ficha en inventario (extender filtrarInventario)
-const _filtrarInventario_v2 = filtrarInventario;
-function filtrarInventario() {
-  _filtrarInventario_v2();
-  // Agregar botón estadísticas a cada fila
+// Agrega el botón de estadísticas a cada fila del inventario (llamado al final de filtrarInventario)
+function agregarBotonesEstadisticas() {
   document.querySelectorAll('#inventarioTableBody tr').forEach(tr => {
     const td = tr.querySelector('.acciones-td');
     if (!td) return;
-    const idMatch = tr.innerHTML.match(/verFichaProducto\('([^']+)'\)/);
-    if (idMatch) return; // ya tiene botón
+    if (td.querySelector('.btn-stats')) return; // ya tiene botón
     const editBtn = td.querySelector('.btn-icon.primary');
     if (editBtn) {
-      // Extraer el id del producto de abrirEditarProducto
       const onclickStr = editBtn.getAttribute('onclick')||'';
       const idExtract  = onclickStr.match(/"id":"([^"]+)"/);
       if (idExtract) {
         const pid = idExtract[1];
         const statsBtn = document.createElement('button');
-        statsBtn.className = 'btn-icon';
+        statsBtn.className = 'btn-icon btn-stats';
         statsBtn.style.cssText = 'background:none;border:1px solid var(--border-color);border-radius:4px;width:28px;height:28px;cursor:pointer;color:var(--text-muted)';
         statsBtn.title = 'Ver estadísticas';
         statsBtn.innerHTML = '<i class="fas fa-chart-bar"></i>';
@@ -2225,13 +2194,12 @@ async function pinConfirmar() {
   }
 }
 
-// Proteger reset BD con PIN
-const _handleConfigAction_v2 = handleConfigAction;
+// Protege reset BD con PIN; esta es la única función pública handleConfigAction
 async function handleConfigAction(action) {
   if (action === 'resetear') {
-    solicitarPIN('⚠️ Confirma con PIN para RESETEAR la base de datos', () => _handleConfigAction_v2(action));
+    solicitarPIN('⚠️ Confirma con PIN para RESETEAR la base de datos', () => ejecutarConfigAction(action));
   } else {
-    await _handleConfigAction_v2(action);
+    await ejecutarConfigAction(action);
   }
 }
 
@@ -2239,25 +2207,4 @@ async function handleConfigAction(action) {
 async function configurarBackupAutomatico() {
   const r = await apiFetch('configurarTriggerBackup');
   showToast(r.message||'Backup automático configurado (diario 23:00).','success');
-}
-
-// Extender sección configuración con opción backup automático
-const _cargarFormEmpresa_v2 = cargarFormEmpresa;
-async function cargarFormEmpresa() {
-  await _cargarFormEmpresa_v2();
-  // Agregar opción backup si no existe
-  if (!document.getElementById('btnBackupAuto')) {
-    const empForm = document.getElementById('empresaForm');
-    if (empForm) {
-      const div = document.createElement('div');
-      div.className = 'card mt-6';
-      div.innerHTML = `
-        <h3><i class="fas fa-clock"></i> Backup Automático</h3>
-        <p style="color:var(--text-muted);margin:.75rem 0">Guardar respaldo diario automáticamente en Google Drive a las 11:00 PM.</p>
-        <button id="btnBackupAuto" onclick="configurarBackupAutomatico()" class="btn secondary-btn">
-          <i class="fas fa-calendar-check"></i> Activar Backup Diario Automático
-        </button>`;
-      empForm.after(div);
-    }
-  }
 }
